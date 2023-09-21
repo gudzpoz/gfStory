@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { darkTheme, NConfigProvider } from 'naive-ui';
+import {
+  darkTheme, NConfigProvider, NLayout, NLayoutContent, NLayoutSider,
+} from 'naive-ui';
 import { ref } from 'vue';
 
 import LineList from './components/LineList.vue';
@@ -10,7 +12,13 @@ const story = ref<Array<Line>>([defaultLine()]);
 
 <template>
   <n-config-provider :theme="darkTheme">
-    <line-list v-model="story"></line-list>
+    <n-layout has-sider sider-placement="right" style="height: 100vh">
+      <n-layout-content>
+        <line-list v-model="story"></line-list>
+      </n-layout-content>
+      <n-layout-sider show-trigger="arrow-circle">
+      </n-layout-sider>
+    </n-layout>
   </n-config-provider>
 </template>
 
