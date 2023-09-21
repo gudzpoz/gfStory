@@ -13,10 +13,10 @@ defineProps<{
 <template>
   <!-- eslint-disable-next-line vue/no-mutating-props -->
   <n-tabs :value="modelValue.type" @update:value="(v) => modelValue.type = v">
-    <n-tab-pane name="text" tab="Text">
+    <n-tab-pane name="text" tab="文本内容">
       <text-line-view :modelValue="(modelValue as TextLine)"></text-line-view>
     </n-tab-pane>
-    <n-tab-pane name="scene" tab="Scene">
+    <n-tab-pane name="scene" tab="样式变化">
       <scene-line-view :modelValue="(modelValue as SceneLine)"></scene-line-view>
     </n-tab-pane>
   </n-tabs>
