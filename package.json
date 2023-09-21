@@ -13,6 +13,7 @@
   "dependencies": {
     "@brocatel/mdc": "^0.3.0",
     "@brocatel/mde": "^0.3.0",
+    "@vicons/material": "^0.12.0",
     "naive-ui": "^2.34.4",
     "vfonts": "^0.0.3",
     "vue": "^3.3.4"
