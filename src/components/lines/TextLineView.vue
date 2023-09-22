@@ -2,7 +2,7 @@
 import {
   NColorPicker, NForm, NFormItem, NSelect,
 } from 'naive-ui';
-import { ref } from 'vue';
+import { inject, ref, type Ref } from 'vue';
 
 import ClassicEditor from './editor';
 import { type TextLine } from '../../types/lines';
@@ -10,6 +10,7 @@ import { type TextLine } from '../../types/lines';
 const props = defineProps<{
   modelValue: TextLine,
 }>();
+const narrators = inject<Ref<{ value: string }[]>>('narrators')!;
 
 const color = ref(props.modelValue.narratorColor);
 </script>
@@ -22,6 +23,7 @@ const color = ref(props.modelValue.narratorColor);
         :value="modelValue.narrator"
         @update:value="(v) => modelValue.narrator = v"
         :style="{ '--narrator-text-color': color }"
+        :options="narrators"
         filterable
         tag
       ></n-select>

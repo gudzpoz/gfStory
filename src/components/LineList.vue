@@ -5,10 +5,10 @@ import {
 import {
   AddFilled, DeleteFilled, MoveDownFilled, MoveUpFilled, RefreshFilled,
 } from '@vicons/material';
-import { ref } from 'vue';
+import { computed, provide, ref } from 'vue';
 
 import StoryLineView from './lines/StoryLineView.vue';
-import { type Line, defaultLine } from '../types/lines';
+import { type Line, defaultLine, type TextLine } from '../types/lines';
 
 const props = withDefaults(defineProps<{
   modelValue?: Array<Line>,
@@ -16,6 +16,16 @@ const props = withDefaults(defineProps<{
   modelValue: () => [],
 });
 const lines = ref(props.modelValue);
+provide('narrators', computed(() => {
+  const narrators = lines.value
+    .filter((line) => line.type === 'text' && line.narrator !== '')
+    .map((line) => (line as TextLine).narrator);
+  return [...new Set(narrators)]
+    .map((narrator) => ({
+      label: narrator,
+      value: narrator,
+    }));
+}));
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
@@ -62,6 +72,13 @@ function appendDefaultLine() {
   lines.value.push(line);
   names.value = [line.id];
 }
+
+function pruneHtml(html: string, limit = 10) {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const text = container.innerText;
+  return text.length > limit ? `${text.substring(0, limit)}...` : text;
+}
 </script>
 
 <template>
@@ -88,8 +105,13 @@ function appendDefaultLine() {
     <n-collapse-item v-for="line in lines" :key="line.id" :name="line.id">
       <story-line-view :modelValue="line"></story-line-view>
       <template #header>
-        <n-tag type="success">
-          {{ line.type === 'text' ? '文本节点' : '功能节点' }}
+        <div v-if="line.type === 'text'">
+          <n-tag type="success">文本节点</n-tag>
+          <n-tag v-if="line.narrator !== ''" type="info">{{ line.narrator }}</n-tag>
+          <span v-text="pruneHtml(line.text)"></span>
+        </div>
+        <n-tag v-else type="success">
+          {{ '功能节点' }}
         </n-tag>
       </template>
     </n-collapse-item>
@@ -98,8 +120,16 @@ function appendDefaultLine() {
 
 <style>
 .n-collapse {
-  padding: 24px;
+  padding: 12px;
   width: auto;
+}
+.n-collapse .n-collapse-item {
+  padding: 12px;
+  transition: background-color 0.3s;
+}
+.n-collapse-item--active {
+  border-radius: 12px;
+  background-color: black;
 }
 
 .list-operations {
