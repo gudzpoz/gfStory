@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  NButton, NButtonGroup, NCard, NCollapse, NCollapseItem, NIcon, NTag,
+  NButton, NButtonGroup, NCard, NCollapse, NCollapseItem, NIcon, NSpace, NTag,
 } from 'naive-ui';
 import {
   AddFilled, DeleteFilled, MoveDownFilled, MoveUpFilled, RefreshFilled,
@@ -85,19 +85,19 @@ function pruneHtml(html: string, limit = 10) {
   <n-card class="list-operations">
     <n-button-group>
       <n-button @click="appendDefaultLine" type="primary">
-        <n-icon><add-filled></add-filled></n-icon>
+        <n-icon><add-filled></add-filled></n-icon>添加节点
       </n-button>
       <n-button @click="removeLine" type="error">
-        <n-icon><delete-filled></delete-filled></n-icon>
+        <n-icon><delete-filled></delete-filled></n-icon>移除当前
       </n-button>
       <n-button @click="moveUp" secondary type="primary">
-        <n-icon><move-up-filled></move-up-filled></n-icon>
+        <n-icon><move-up-filled></move-up-filled></n-icon>上移
       </n-button>
       <n-button @click="moveDown" secondary type="primary">
-        <n-icon><move-down-filled></move-down-filled></n-icon>
+        <n-icon><move-down-filled></move-down-filled></n-icon>下移
       </n-button>
       <n-button @click="emit('update:modelValue', lines)" type="warning">
-        <n-icon><refresh-filled></refresh-filled></n-icon>
+        <n-icon><refresh-filled></refresh-filled></n-icon>预览故事
       </n-button>
     </n-button-group>
   </n-card>
@@ -105,11 +105,11 @@ function pruneHtml(html: string, limit = 10) {
     <n-collapse-item v-for="line in lines" :key="line.id" :name="line.id">
       <story-line-view :modelValue="line"></story-line-view>
       <template #header>
-        <div v-if="line.type === 'text'">
+        <n-space v-if="line.type === 'text'">
           <n-tag type="success">文本节点</n-tag>
           <n-tag v-if="line.narrator !== ''" type="info">{{ line.narrator }}</n-tag>
-          <span v-text="pruneHtml(line.text)"></span>
-        </div>
+          <span class="text-preview" v-text="pruneHtml(line.text)"></span>
+        </n-space>
         <n-tag v-else type="success">
           {{ '功能节点' }}
         </n-tag>
@@ -136,5 +136,8 @@ function pruneHtml(html: string, limit = 10) {
   position: sticky;
   top: 0;
   z-index: 1;
+}
+.text-preview {
+  line-height: 2em;
 }
 </style>
