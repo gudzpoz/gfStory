@@ -4,6 +4,7 @@ import {
 } from 'naive-ui';
 import { inject, ref, type Ref } from 'vue';
 
+import SpriteSelector from './SpriteSelector.vue';
 import ClassicEditor from './editor';
 import { type TextLine } from '../../types/lines';
 
@@ -35,6 +36,9 @@ const color = ref(props.modelValue.narratorColor);
         :modes="['hex']"
         @update:value="(v) => color = modelValue.narratorColor = v"
       ></n-color-picker>
+    </n-form-item>
+    <n-form-item label="立绘" path="tachie">
+      <sprite-selector :modelValue="modelValue.sprites"></sprite-selector>
     </n-form-item>
     <n-form-item class="n-ck-editor" label="文字内容">
       <ckeditor :editor="ClassicEditor"

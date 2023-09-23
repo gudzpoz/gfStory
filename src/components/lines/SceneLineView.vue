@@ -3,7 +3,7 @@ import {
   NCheckbox, NForm, NFormItem, NRadioButton, NRadioGroup,
 } from 'naive-ui';
 
-import MediaSelector from '../MediaSelector.vue';
+import MediaSelector from './MediaSelector.vue';
 import { type SceneLine } from '../../types/lines';
 
 const props = defineProps<{
@@ -22,11 +22,11 @@ if (!props.modelValue.scene) {
     <n-form-item label="类型" path="scene">
       <n-radio-group :value="modelValue.scene" @update:value="(v) => modelValue.scene = v">
         <n-radio-button value="background">背景图片</n-radio-button>
-        <n-radio-button value="sprite">人物立绘</n-radio-button>
       </n-radio-group>
     </n-form-item>
     <n-form-item label="图片" path="image">
-      <media-selector :type="modelValue.scene" @update:model-value="(v) => modelValue.image = v">
+      <media-selector :type="modelValue.scene"
+        :modelValue="modelValue.image" @update:model-value="(v) => modelValue.image = v">
       </media-selector>
     </n-form-item>
     <n-form-item label="控制" path="noSkipping">

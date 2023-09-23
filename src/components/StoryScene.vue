@@ -8,6 +8,7 @@ defineProps<{
   backgroundUrl: string,
   narratorHtml: string,
   textHtml: string,
+  textHeight?: string,
 }>();
 
 // eslint-disable-next-line no-spaced-func
@@ -57,14 +58,15 @@ onMounted(() => {
     @click="emitClick"
     @mousedown="setDownPosition"
   >
-    <img ref="background" class="story-background"
+    <img v-show="backgroundUrl"
+      ref="background" class="story-background"
       :src="backgroundUrl" :style="{ width, height }" />
     <div class="dialog">
       <div class="narrator-box">
         <div class="narrator" v-html="narratorHtml"></div>
         <div class="narrator-corner"></div>
       </div>
-      <div class="text" v-html="textHtml"></div>
+      <div class="text" :style="{ height: textHeight ?? '6em' }" v-html="textHtml"></div>
       <div class="corner">
         <img class="loaded-circle" :src="circleSvg" />
         <img :src="gfSystemSvg" />
@@ -110,6 +112,8 @@ onMounted(() => {
 .dialog .text {
   font-size: 1.1em;
   margin: 0.5em 1.2em 1.2em 1.2em;
+  word-wrap: break-word;
+  overflow-y: scroll;
 }
 .dialog .text p {
   margin: 0;

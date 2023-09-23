@@ -11,6 +11,7 @@ export interface TextLine extends LineType {
   narrator: string;
   text: string;
   narratorColor: string;
+  sprites: string[];
 }
 
 export interface SceneLine extends LineType {
@@ -28,7 +29,7 @@ export function nextId() {
   return id;
 }
 
-export function defaultLine(): Line {
+export function defaultLine(): TextLine {
   return {
     type: 'text',
     id: `${nextId()}`,
@@ -36,5 +37,6 @@ export function defaultLine(): Line {
     narrator: '',
     text: '',
     narratorColor: '#ffffff',
+    sprites: [],
   };
 }

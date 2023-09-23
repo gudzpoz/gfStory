@@ -69,6 +69,14 @@ function moveDown() {
 
 function appendDefaultLine() {
   const line = defaultLine();
+  const ls = lines.value;
+  for (let i = ls.length - 1; i >= 0; i -= 1) {
+    const last = ls[i];
+    if (last.type === 'text') {
+      line.sprites = last.sprites;
+      break;
+    }
+  }
   lines.value.push(line);
   names.value = [line.id];
 }

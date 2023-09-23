@@ -9,7 +9,7 @@ import {
   h, ref, watch, type VNodeChild,
 } from 'vue';
 
-import { db, ACCEPTED, MEDIA_TYPES } from '../db/media';
+import { db, ACCEPTED, MEDIA_TYPES } from '../../db/media';
 
 const props = defineProps<{
   type: typeof MEDIA_TYPES[number],
@@ -22,7 +22,7 @@ const emit = defineEmits<{
   (event: 'update:modelValue', modelValue: string): void,
 }>();
 
-type Option = { label: string, value: string };
+type Option = { label: string, value: string, url: string };
 const items = ref<Option[]>([]);
 
 const subscribe = () => db.liveQueryAll(props.type).subscribe((media) => {
@@ -30,7 +30,8 @@ const subscribe = () => db.liveQueryAll(props.type).subscribe((media) => {
     const url = URL.createObjectURL(m.blob);
     return {
       label: m.name,
-      value: url,
+      value: `${props.type}:${m.name}`,
+      url,
     };
   });
 });
@@ -48,7 +49,7 @@ const renderLabel = (option: Option): VNodeChild => (
         db[props.type].delete(option.label);
       },
     }, () => [h(NIcon, {}, () => [h(CloseFilled)])]),
-    h(NAvatar, { src: option.value }),
+    h(NAvatar, { src: option.url }),
     option.label,
   ])
 );
@@ -72,6 +73,7 @@ function upload(options: UploadCustomRequestOptions) {
     :options="items"
     :render-label="renderLabel"
     :multiple="multiple"
+    :value="modelValue"
     @update:value="(v) => emit('update:modelValue', v)"
     filterable
     class="media-select"
@@ -95,7 +97,9 @@ function upload(options: UploadCustomRequestOptions) {
 
 <style>
 .n-space .n-avatar {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0.2em;
   width: 2.5em;
   height: 2.5em;

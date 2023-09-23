@@ -28,6 +28,12 @@ export class MediaDatabase extends Dexie {
   liveQueryAll(type: typeof MEDIA_TYPES[number]) {
     return liveQuery(async () => this[type].toArray());
   }
+
+  async toDataUrl(s: string) {
+    const [type, name] = s.split(':', 2);
+    const media = await this[type as (typeof MEDIA_TYPES)[number]].where('name').equals(name).first();
+    return (media ? URL.createObjectURL(media.blob) : '');
+  }
 }
 
 export const db = new MediaDatabase();
