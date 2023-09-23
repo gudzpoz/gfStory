@@ -20,7 +20,7 @@ provide('narrators', computed(() => {
   const narrators = lines.value
     .filter((line) => line.type === 'text' && line.narrator !== '')
     .map((line) => (line as TextLine).narrator);
-  return [...new Set(narrators)]
+  return ['', ...new Set(narrators)]
     .map((narrator) => ({
       label: narrator,
       value: narrator,
@@ -79,6 +79,11 @@ function pruneHtml(html: string, limit = 10) {
   const text = container.innerText;
   return text.length > limit ? `${text.substring(0, limit)}...` : text;
 }
+
+function canMove(end: number) {
+  const i = findIndexByCurrentName();
+  return i !== -1 && i !== end;
+}
 </script>
 
 <template>
@@ -90,10 +95,10 @@ function pruneHtml(html: string, limit = 10) {
       <n-button @click="removeLine" type="error">
         <n-icon><delete-filled></delete-filled></n-icon>移除当前
       </n-button>
-      <n-button @click="moveUp" secondary type="primary">
+      <n-button @click="moveUp" secondary type="primary" :disabled="!canMove(0)">
         <n-icon><move-up-filled></move-up-filled></n-icon>上移
       </n-button>
-      <n-button @click="moveDown" secondary type="primary">
+      <n-button @click="moveDown" secondary type="primary" :disabled="!canMove(lines.length - 1)">
         <n-icon><move-down-filled></move-down-filled></n-icon>下移
       </n-button>
       <n-button @click="emit('update:modelValue', lines)" type="warning">

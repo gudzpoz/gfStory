@@ -6,11 +6,19 @@ const {
   js, lauxlib, lua, lualib, to_luastring, tojs,
 } = fengari;
 
-export default class StoryInterpreter {
+export interface StoryLine {
+  text: string;
+  tags: { [key: string]: string };
+}
+
+export class StoryInterpreter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   L: any;
 
+  loaded: boolean;
+
   constructor() {
+    this.loaded = false;
     this.L = lauxlib.luaL_newstate();
     lualib.luaL_openlibs(this.L);
     lauxlib.luaL_requiref(this.L, 'js', js.luaopen_js, false);
@@ -22,9 +30,13 @@ export default class StoryInterpreter {
     lua.lua_pushstring(this.L, to_luastring(chunk));
     lua.lua_setglobal(this.L, 's');
     this.run('story=vm.load_vm(s)');
+    this.loaded = true;
   }
 
-  next(option?: number) {
+  next(option?: number): StoryLine | undefined {
+    if (!this.loaded) {
+      return undefined;
+    }
     if (option) {
       lua.lua_pushnumber(this.L, option);
     } else {

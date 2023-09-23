@@ -21,9 +21,10 @@ const color = ref(props.modelValue.narratorColor);
     <n-form-item label="名称显示" path="narrator" class="narrator">
       <n-select
         :value="modelValue.narrator"
-        @update:value="(v) => modelValue.narrator = v"
+        @update:value="(v) => modelValue.narrator = v ?? ''"
         :style="{ '--narrator-text-color': color }"
         :options="narrators"
+        clearable
         filterable
         tag
       ></n-select>

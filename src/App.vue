@@ -5,7 +5,7 @@ import {
 import { ref } from 'vue';
 
 import LineList from './components/LineList.vue';
-import StoryPreview from './components/StoryPreview.vue';
+import StoryTeller from './components/StoryTeller.vue';
 import { type Line, defaultLine } from './types/lines';
 import { compileMarkdown, linesToMarkdown } from './story/compiler';
 
@@ -22,8 +22,8 @@ async function updateStory(story: Line[]) {
       <n-layout-content>
         <line-list :modelValue="[defaultLine()]" @update:modelValue="updateStory"></line-list>
       </n-layout-content>
-      <n-layout-sider show-trigger="arrow-circle">
-        <story-preview :story="markdown"></story-preview>
+      <n-layout-sider show-trigger="arrow-circle" width="500px">
+        <story-teller :chunk="markdown"></story-teller>
       </n-layout-sider>
     </n-layout>
   </n-config-provider>
