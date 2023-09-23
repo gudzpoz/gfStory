@@ -9,6 +9,8 @@ export function linesToMarkdown(lines: Line[]) {
         return `[narrator] [color: ${line.narratorColor}] ${line.narrator}
 
 ${line.text}`;
+      case 'scene':
+        return `[${line.scene}] [style: ${line.style}] ${line.image}`;
       default:
         return '';
     }

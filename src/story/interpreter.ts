@@ -8,7 +8,13 @@ const {
 
 export interface StoryLine {
   text: string;
-  tags: { [key: string]: string };
+  tags: {
+    narrator: string,
+    color: string,
+
+    background: string,
+    style: string,
+  };
 }
 
 export class StoryInterpreter {

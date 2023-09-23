@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineEmits } from 'vue';
+import { defineEmits, onMounted, ref } from 'vue';
 
 import circleSvg from '../assets/circle.svg';
 import gfSystemSvg from '../assets/G.F.system.svg';
@@ -29,14 +29,36 @@ function emitClick(event: MouseEvent) {
     emit('click');
   }
 }
+
+const backgroundSpace = ref<HTMLDivElement>();
+const background = ref<HTMLImageElement>();
+const width = ref('');
+const height = ref('');
+function rescaleImage() {
+  const div = backgroundSpace.value!;
+  const image = background.value!;
+  const ratio = image.naturalWidth / image.naturalHeight;
+  let w = div.clientWidth;
+  let h = w / ratio;
+  if (h > div.clientHeight) {
+    h = div.clientHeight;
+    w = h * ratio;
+  }
+  width.value = `${w}px`;
+  height.value = `${h}px`;
+}
+onMounted(() => {
+  background.value!.onload = rescaleImage;
+});
 </script>
 
 <template>
-  <div class="story"
+  <div ref="backgroundSpace" class="story"
     @click="emitClick"
     @mousedown="setDownPosition"
   >
-    <img class="story-background" :src="backgroundUrl" />
+    <img ref="background" class="story-background"
+      :src="backgroundUrl" :style="{ width, height }" />
     <div class="dialog">
       <div class="narrator-box">
         <div class="narrator" v-html="narratorHtml"></div>
@@ -58,6 +80,8 @@ function emitClick(event: MouseEvent) {
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  background-color: black;
 }
 
 .dialog {
@@ -69,7 +93,7 @@ function emitClick(event: MouseEvent) {
   width: calc(100% - 2em);
 
   box-shadow: inset 0 0 1px gray;
-  background-image: radial-gradient(#fff4 0, transparent 1px);
+  background-image: radial-gradient(#555c 0, #111c 1px);
   background-size: 5px 5px;
   clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 18px, 258px 18px, 240px 0);
 
@@ -119,5 +143,14 @@ function emitClick(event: MouseEvent) {
   background: linear-gradient(0.25turn, gray 0, gray 18px, #fdb300c0 18px);
   box-shadow: 0 0 1px gray;
   clip-path: polygon(0 0, 25px 25px, 100% 25px, 100% 0);
+}
+
+img.story-background {
+  position: absolute;
+  margin: auto;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
 }
 </style>

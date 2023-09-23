@@ -21,6 +21,8 @@ function nextLine() {
     if (line.tags.narrator !== undefined) {
       narrator.value = line.text.trim();
       narratorColor.value = line.tags.color;
+    } else if (line.tags.background !== undefined) {
+      background.value = line.text.trim().replace(/\\/g, '');
     } else {
       text.value = line.text;
       return;
@@ -33,6 +35,10 @@ watch(() => props.chunk, (s) => {
   if (s.trim() === '') {
     return;
   }
+  background.value = '';
+  narrator.value = '';
+  narratorColor.value = '';
+  text.value = '';
   story.reload(s);
   nextLine();
 });

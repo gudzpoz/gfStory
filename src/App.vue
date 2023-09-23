@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
-  darkTheme, NConfigProvider, NLayout, NLayoutContent, NLayoutSider,
+  darkTheme, zhCN,
+  NConfigProvider, NLayout, NLayoutContent, NLayoutSider,
 } from 'naive-ui';
 import { ref } from 'vue';
 
@@ -17,12 +18,12 @@ async function updateStory(story: Line[]) {
 </script>
 
 <template>
-  <n-config-provider :theme="darkTheme">
+  <n-config-provider :theme="darkTheme" :locale="zhCN">
     <n-layout has-sider sider-placement="right" style="height: 100vh">
       <n-layout-content>
         <line-list :modelValue="[defaultLine()]" @update:modelValue="updateStory"></line-list>
       </n-layout-content>
-      <n-layout-sider show-trigger="arrow-circle" width="500px">
+      <n-layout-sider show-trigger="arrow-circle" width="500px" bordered>
         <story-teller :chunk="markdown"></story-teller>
       </n-layout-sider>
     </n-layout>

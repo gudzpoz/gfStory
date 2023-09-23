@@ -92,7 +92,7 @@ function canMove(end: number) {
       <n-button @click="appendDefaultLine" type="primary">
         <n-icon><add-filled></add-filled></n-icon>添加节点
       </n-button>
-      <n-button @click="removeLine" type="error">
+      <n-button @click="removeLine" type="error" :disabled="!canMove(-1)">
         <n-icon><delete-filled></delete-filled></n-icon>移除当前
       </n-button>
       <n-button @click="moveUp" secondary type="primary" :disabled="!canMove(0)">
@@ -125,11 +125,11 @@ function canMove(end: number) {
 
 <style>
 .n-collapse {
-  padding: 12px;
   width: auto;
 }
 .n-collapse .n-collapse-item {
-  padding: 12px;
+  --n-title-padding: 0;
+  padding: 12px 12px 0 12px;
   transition: background-color 0.3s;
 }
 .n-collapse-item--active {
