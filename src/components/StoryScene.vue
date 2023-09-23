@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { defineEmits, onMounted, ref } from 'vue';
+import {
+  defineEmits, onMounted, reactive, ref, watch,
+} from 'vue';
 
 import circleSvg from '../assets/circle.svg';
 import gfSystemSvg from '../assets/G.F.system.svg';
 
-defineProps<{
+const props = defineProps<{
   backgroundUrl: string,
   narratorHtml: string,
   sprites: string[],
@@ -52,6 +54,45 @@ function rescaleImage() {
 onMounted(() => {
   background.value!.onload = rescaleImage;
 });
+
+type Sprite = {
+  left: number;
+  opacity: number;
+  url: string;
+};
+const spritesOnStage = ref<Sprite[]>([]);
+watch(() => props.sprites, (sprites) => {
+  const newUrls = new Set(sprites);
+  spritesOnStage.value.filter((s) => !newUrls.has(s.url))
+    // eslint-disable-next-line no-param-reassign
+    .forEach((s) => { s.left -= 20; s.opacity = 0; });
+  setTimeout(() => {
+    spritesOnStage.value = spritesOnStage.value.filter((s) => newUrls.has(s.url));
+  }, 300);
+  spritesOnStage.value = spritesOnStage.value.filter((s) => newUrls.has(s.url));
+
+  const div = backgroundSpace.value!;
+  const unit = div.clientWidth / sprites.length / 2;
+
+  sprites.forEach((sprite, i) => {
+    const left = (2 * i + 1) * unit;
+    const index = spritesOnStage.value.findIndex((s) => s.url === sprite);
+    if (index !== -1) {
+      spritesOnStage.value[index].left = left;
+    } else {
+      const item: Sprite = reactive({
+        left: left - 20,
+        opacity: 0,
+        url: sprite,
+      });
+      spritesOnStage.value.push(item);
+      setTimeout(() => {
+        item.left = left;
+        item.opacity = 1;
+      }, 16);
+    }
+  });
+});
 </script>
 
 <template>
@@ -62,6 +103,12 @@ onMounted(() => {
     <img v-show="backgroundUrl"
       ref="background" class="story-background"
       :src="backgroundUrl" :style="{ width, height }" />
+    <div class="sprites">
+      <img class="sprite" v-for="sprite in spritesOnStage" :key="sprite.url"
+        :src="sprite.url"
+        :style="{ left: `${sprite.left}px`, opacity: sprite.opacity }"
+      />
+    </div>
     <div class="dialog">
       <div class="narrator-box">
         <div class="narrator" v-html="narratorHtml"></div>
@@ -108,6 +155,14 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   padding: 0 7px 0 0;
+}
+
+.sprites .sprite {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  transition: all 0.2s;
 }
 
 .dialog .text {

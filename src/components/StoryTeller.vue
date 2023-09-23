@@ -25,7 +25,9 @@ function nextLine() {
     } else if (line.tags.background !== undefined) {
       background.value = line.text.trim().replace(/\\/g, '');
     } else if (line.tags.sprites !== undefined) {
-      sprites.value = line.text.split('|').map((s) => s.trim().replace(/\\/g, ''));
+      sprites.value = line.text.split('|')
+        .map((s) => s.trim().replace(/\\/g, ''))
+        .filter((s) => s !== '');
     } else {
       text.value = line.text;
       return;
