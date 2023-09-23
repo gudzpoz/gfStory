@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { NButton, NList } from 'naive-ui';
+import {
+  NButton, NIcon, NList, NSpace,
+} from 'naive-ui';
+import { AddFilled, DeleteFilled } from '@vicons/material';
 
 import MediaSelector from './MediaSelector.vue';
 
@@ -10,11 +13,27 @@ defineProps<{
 
 <template>
   <!-- eslint-disable vue/no-mutating-props -->
-  <n-list>
-    <media-selector v-for="media, i in modelValue" :key="i" type="sprite"
-      :modelValue="media"
-      @update:modelValue="(v) => modelValue[i] = v">
-    </media-selector>
+  <n-list bordered>
+    <n-space class="sprite-item" align="center" v-for="media, i in modelValue" :key="i">
+      <media-selector type="sprite"
+        :modelValue="media"
+        @update:modelValue="(v) => modelValue[i] = v">
+      </media-selector>
+      <n-button @click="modelValue.splice(i, 1)">
+        <n-icon><delete-filled></delete-filled></n-icon>
+      </n-button>
+
+    </n-space>
+    <template #footer>
+      <n-button @click="modelValue.push('')">
+        <n-icon><add-filled></add-filled></n-icon>添加
+      </n-button>
+    </template>
   </n-list>
-  <n-button @click="modelValue.push('')">添加</n-button>
 </template>
+
+<style>
+.sprite-item {
+  margin: 0.2em;
+}
+</style>

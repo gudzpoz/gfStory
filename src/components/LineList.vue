@@ -3,12 +3,14 @@ import {
   NButton, NButtonGroup, NCard, NCollapse, NCollapseItem, NIcon, NSpace, NTag,
 } from 'naive-ui';
 import {
-  AddFilled, DeleteFilled, MoveDownFilled, MoveUpFilled, RefreshFilled,
+  AddFilled, DeleteFilled, ContentPasteFilled, MoveDownFilled, MoveUpFilled, RefreshFilled,
 } from '@vicons/material';
 import { computed, provide, ref } from 'vue';
 
 import StoryLineView from './lines/StoryLineView.vue';
-import { type Line, defaultLine, type TextLine } from '../types/lines';
+import {
+  defaultLine, nextId, type Line, type TextLine,
+} from '../types/lines';
 
 const props = withDefaults(defineProps<{
   modelValue?: Array<Line>,
@@ -81,6 +83,16 @@ function appendDefaultLine() {
   names.value = [line.id];
 }
 
+function copyCurrent() {
+  const i = findIndexByCurrentName();
+  if (i !== -1) {
+    const line = JSON.parse(JSON.stringify(lines.value[i]));
+    line.id = nextId();
+    lines.value.splice(i + 1, 0, line);
+    names.value = [line.id];
+  }
+}
+
 function pruneHtml(html: string, limit = 10) {
   const container = document.createElement('div');
   container.innerHTML = html;
@@ -99,6 +111,9 @@ function canMove(end: number) {
     <n-button-group>
       <n-button @click="appendDefaultLine" type="primary">
         <n-icon><add-filled></add-filled></n-icon>添加节点
+      </n-button>
+      <n-button @click="copyCurrent" type="warning" :disabled="!canMove(-1)">
+        <n-icon><content-paste-filled></content-paste-filled></n-icon>复制节点
       </n-button>
       <n-button @click="removeLine" type="error" :disabled="!canMove(-1)">
         <n-icon><delete-filled></delete-filled></n-icon>移除当前

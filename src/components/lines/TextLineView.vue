@@ -58,6 +58,9 @@ const color = ref(props.modelValue.narratorColor);
 .n-ck-editor {
   flex-basis: 100%;
 }
+.ck-editor {
+  max-width: 100%;
+}
 
 .n-form .narrator .n-base-selection .n-base-selection-label .n-base-selection-overlay {
   color: var(--narrator-text-color, var(--n-text-color));

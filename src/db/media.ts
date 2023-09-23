@@ -20,9 +20,12 @@ export class MediaDatabase extends Dexie {
 
   sprite!: Table<Media>;
 
+  cache: { [key in typeof MEDIA_TYPES[number]]: { [key: string]: string } };
+
   constructor() {
     super('media');
     this.version(1).stores(Object.fromEntries(MEDIA_TYPES.map((type) => [type, 'name, blob'])));
+    this.cache = { audio: {}, background: {}, sprite: {} };
   }
 
   liveQueryAll(type: typeof MEDIA_TYPES[number]) {
@@ -30,9 +33,23 @@ export class MediaDatabase extends Dexie {
   }
 
   async toDataUrl(s: string) {
-    const [type, name] = s.split(':', 2);
-    const media = await this[type as (typeof MEDIA_TYPES)[number]].where('name').equals(name).first();
-    return (media ? URL.createObjectURL(media.blob) : '');
+    const [t, name] = s.split(':', 2);
+    const type = t as typeof MEDIA_TYPES[number];
+    if (this.cache[type][name]) {
+      return this.cache[type][name];
+    }
+    const media = await this[type].where('name').equals(name).first();
+    if (!media) {
+      return '';
+    }
+    const url = URL.createObjectURL(media.blob);
+    this.cache[type][name] = url;
+    return url;
+  }
+
+  deleteMedia(type: typeof MEDIA_TYPES[number], name: string) {
+    delete this.cache[type][name];
+    return this[type].delete(name);
   }
 }
 

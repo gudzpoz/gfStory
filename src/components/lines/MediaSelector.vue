@@ -46,7 +46,7 @@ const renderLabel = (option: Option): VNodeChild => (
     h(NButton, {
       onClick(e) {
         e.stopPropagation();
-        db[props.type].delete(option.label);
+        db.deleteMedia(props.type, option.label);
       },
     }, () => [h(NIcon, {}, () => [h(CloseFilled)])]),
     h(NAvatar, { src: option.url }),

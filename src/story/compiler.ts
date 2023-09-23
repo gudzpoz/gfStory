@@ -6,10 +6,16 @@ import { db } from '../db/media';
 export async function linesToMarkdown(lines: Line[]) {
   const segments = await Promise.all(lines.map(async (line) => {
     switch (line.type) {
-      case 'text':
-        return `[narrator] [color: ${line.narratorColor}] ${line.narrator}
+      case 'text': {
+        const sprites = (await Promise.all(
+          line.sprites.map((s) => db.toDataUrl(s)),
+        ));
+        return `[sprites] ${sprites.join('|')}
+        
+[narrator] [color: ${line.narratorColor}] ${line.narrator}
 
 ${line.text}`;
+      }
       case 'scene':
         return `[${line.scene}] [style: ${line.style}] ${await db.toDataUrl(line.image)}`;
       default:

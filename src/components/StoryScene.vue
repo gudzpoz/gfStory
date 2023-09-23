@@ -7,6 +7,7 @@ import gfSystemSvg from '../assets/G.F.system.svg';
 defineProps<{
   backgroundUrl: string,
   narratorHtml: string,
+  sprites: string[],
   textHtml: string,
   textHeight?: string,
 }>();

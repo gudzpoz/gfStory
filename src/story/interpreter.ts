@@ -9,11 +9,13 @@ const {
 export interface StoryLine {
   text: string;
   tags: {
-    narrator: string,
-    color: string,
+    narrator?: string,
+    color?: string,
 
-    background: string,
-    style: string,
+    background?: string,
+    style?: string,
+
+    sprites?: string,
   };
 }
 

@@ -13,6 +13,7 @@ const background = ref('');
 const narrator = ref('');
 const narratorColor = ref('');
 const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}">${narrator.value}</span>`);
+const sprites = ref<string[]>([]);
 const text = ref('');
 
 function nextLine() {
@@ -20,9 +21,11 @@ function nextLine() {
   while (line) {
     if (line.tags.narrator !== undefined) {
       narrator.value = line.text.trim();
-      narratorColor.value = line.tags.color;
+      narratorColor.value = line.tags.color ?? '';
     } else if (line.tags.background !== undefined) {
       background.value = line.text.trim().replace(/\\/g, '');
+    } else if (line.tags.sprites !== undefined) {
+      sprites.value = line.text.split('|').map((s) => s.trim().replace(/\\/g, ''));
     } else {
       text.value = line.text;
       return;
@@ -48,6 +51,7 @@ watch(() => props.chunk, (s) => {
   <story-scene
     :background-url="background"
     :narrator-html="narratorHtml"
+    :sprites="sprites"
     :text-html="text"
     @click="nextLine"
   >

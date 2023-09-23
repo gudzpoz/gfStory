@@ -26,13 +26,13 @@ export type Line = TextLine | SceneLine;
 let id = 0;
 export function nextId() {
   id += 1;
-  return id;
+  return `${id}`;
 }
 
 export function defaultLine(): TextLine {
   return {
     type: 'text',
-    id: `${nextId()}`,
+    id: nextId(),
     noSkipping: false,
     narrator: '',
     text: '',
