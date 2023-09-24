@@ -3,7 +3,8 @@ import {
   NButton, NButtonGroup, NCard, NCollapse, NCollapseItem, NIcon, NSpace, NTag,
 } from 'naive-ui';
 import {
-  AddFilled, DeleteFilled, ContentPasteFilled, MoveDownFilled, MoveUpFilled, RefreshFilled,
+  AddFilled, ContentPasteFilled, DeleteFilled, DownloadFilled,
+  MoveDownFilled, MoveUpFilled, RefreshFilled,
 } from '@vicons/material';
 import { computed, provide, ref } from 'vue';
 
@@ -31,7 +32,8 @@ provide('narrators', computed(() => {
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
-  (event:'update:modelValue', modelValue:Array<Line>): void,
+  (event: 'update:modelValue', modelValue: Array<Line>): void,
+  (event: 'export'): void,
 }>();
 
 const names = ref<Array<string>>([]);
@@ -126,6 +128,9 @@ function canMove(end: number) {
       </n-button>
       <n-button @click="emit('update:modelValue', lines)" type="warning">
         <n-icon><refresh-filled></refresh-filled></n-icon>预览故事
+      </n-button>
+      <n-button @click="emit('update:modelValue', lines); emit('export')" type="primary">
+        <n-icon><download-filled></download-filled></n-icon>导出故事
       </n-button>
     </n-button-group>
   </n-card>

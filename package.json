@@ -3,9 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
-    "preview": "vite preview",
+    "dev": "pnpm build-viewer && vite",
+    "build-editor": "pnpm build-viewer && run-p type-check \"build-only {@}\" --",
+    "build-viewer-only": "env BUILD_TARGET=viewer run-p type-check \"build-only {@}\" --",
+    "build-viewer": "pnpm build-viewer-only && cp viewer/viewer.html public && mkdir -p dist && cp viewer/viewer.html dist",
+    "build": "pnpm build-editor",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
@@ -20,8 +22,11 @@
     "@ckeditor/ckeditor5-font": "^39.0.2",
     "@ckeditor/ckeditor5-paragraph": "^39.0.2",
     "@ckeditor/ckeditor5-vue": "^5.1.0",
+    "@types/file-saver": "^2.0.5",
     "@vicons/material": "^0.12.0",
     "dexie": "^3.2.4",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
     "naive-ui": "^2.34.4",
     "vfonts": "^0.0.3",
     "vue": "^3.3.4"
@@ -45,6 +50,7 @@
     "typescript": "~5.2.2",
     "vite": "^4.4.9",
     "vite-node": "^0.34.4",
+    "vite-plugin-singlefile": "^0.13.5",
     "vue-tsc": "^1.8.13"
   }
 }

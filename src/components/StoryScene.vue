@@ -3,8 +3,10 @@ import {
   defineEmits, onMounted, reactive, ref, watch,
 } from 'vue';
 
-import circleSvg from '../assets/circle.svg';
-import gfSystemSvg from '../assets/G.F.system.svg';
+// eslint-disable-next-line import/no-unresolved
+import circleSvg from '../assets/circle.svg?raw';
+// eslint-disable-next-line import/no-unresolved
+import gfSystemSvg from '../assets/G.F.system.svg?raw';
 
 const props = defineProps<{
   backgroundUrl: string,
@@ -69,7 +71,6 @@ watch(() => props.sprites, (sprites) => {
   setTimeout(() => {
     spritesOnStage.value = spritesOnStage.value.filter((s) => newUrls.has(s.url));
   }, 300);
-  spritesOnStage.value = spritesOnStage.value.filter((s) => newUrls.has(s.url));
 
   const div = backgroundSpace.value!;
   const unit = div.clientWidth / sprites.length / 2;
@@ -116,8 +117,8 @@ watch(() => props.sprites, (sprites) => {
       </div>
       <div class="text" :style="{ height: textHeight ?? '6em' }" v-html="textHtml"></div>
       <div class="corner">
-        <img class="loaded-circle" :src="circleSvg" />
-        <img :src="gfSystemSvg" />
+        <span class="loaded-circle" v-html="circleSvg" />
+        <span v-html="gfSystemSvg" />
       </div>
     </div>
   </div>
@@ -163,6 +164,9 @@ watch(() => props.sprites, (sprites) => {
   bottom: 0;
   margin: auto;
   transition: all 0.2s;
+  max-width: 100%;
+  max-height: 100%;
+  transform: translate(-50%, 0);
 }
 
 .dialog .text {
@@ -175,7 +179,7 @@ watch(() => props.sprites, (sprites) => {
   margin: 0;
 }
 
-.loaded-circle {
+.loaded-circle svg {
   display: block;
   margin-left: auto;
   margin-right: 6px;

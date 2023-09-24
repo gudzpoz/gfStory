@@ -5,7 +5,7 @@ import StoryScene from './StoryScene.vue';
 import { StoryInterpreter } from '../story/interpreter';
 
 const props = defineProps<{
-  chunk: string,
+  chunk?: string,
 }>();
 
 const story = new StoryInterpreter();
@@ -36,7 +36,13 @@ function nextLine() {
   }
 }
 
-watch(() => props.chunk, (s) => {
+async function getGlobalStory() {
+  const script = document.head.querySelector('script[type="application/lua"]');
+  return script?.innerHTML ?? await fetch('./sample.lua').then((res) => res.text()) ?? '';
+}
+
+async function updateStory(chunk?: string) {
+  const s = chunk ?? await getGlobalStory();
   if (s.trim() === '') {
     return;
   }
@@ -46,7 +52,9 @@ watch(() => props.chunk, (s) => {
   text.value = '';
   story.reload(s);
   nextLine();
-});
+}
+updateStory(props.chunk);
+watch(() => props.chunk, updateStory);
 </script>
 
 <template>
