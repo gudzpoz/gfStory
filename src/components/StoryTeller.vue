@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import {
+  computed, onUnmounted, ref, watch,
+} from 'vue';
 
 import StoryScene from './StoryScene.vue';
 import { StoryInterpreter } from '../story/interpreter';
@@ -74,6 +76,11 @@ async function updateStory(chunk?: string) {
 }
 updateStory(props.chunk);
 watch(() => props.chunk, updateStory);
+
+onUnmounted(() => {
+  backgroundMusic?.pause();
+  backgroundMusic = null;
+});
 </script>
 
 <template>

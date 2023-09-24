@@ -147,6 +147,7 @@ function canMove(end: number) {
           <n-tag type="success">
             {{ '功能节点' }}
           </n-tag>
+          <n-tag type="warning">{{ line.scene === 'background' ? '背景图' : '背景音乐' }}</n-tag>
           <span class="text-preview">{{ line.media }}</span>
         </n-space>
       </template>
