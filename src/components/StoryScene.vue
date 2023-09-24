@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  defineEmits, onMounted, reactive, ref, watch,
+  onMounted, reactive, ref, watch,
 } from 'vue';
 
 // eslint-disable-next-line import/no-unresolved
@@ -10,6 +10,7 @@ import gfSystemSvg from '../assets/G.F.system.svg?raw';
 
 const props = defineProps<{
   backgroundUrl: string,
+  backgroundStyle: 'auto' | 'width',
   narratorHtml: string,
   sprites: string[],
   textHtml: string,
@@ -46,7 +47,7 @@ function rescaleImage() {
   const ratio = image.naturalWidth / image.naturalHeight;
   let w = div.clientWidth;
   let h = w / ratio;
-  if (h > div.clientHeight) {
+  if (props.backgroundStyle === 'auto' && h > div.clientHeight) {
     h = div.clientHeight;
     w = h * ratio;
   }

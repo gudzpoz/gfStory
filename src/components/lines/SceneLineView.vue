@@ -13,6 +13,8 @@ const props = defineProps<{
 if (!props.modelValue.scene) {
   // eslint-disable-next-line vue/no-mutating-props
   props.modelValue.scene = 'background';
+  // eslint-disable-next-line vue/no-mutating-props
+  props.modelValue.style = 'width';
 }
 </script>
 
@@ -24,9 +26,15 @@ if (!props.modelValue.scene) {
         <n-radio-button value="background">背景图片</n-radio-button>
       </n-radio-group>
     </n-form-item>
-    <n-form-item label="图片" path="image">
+    <n-form-item v-if="modelValue.scene === 'background'" label="显示方式" path="style">
+      <n-radio-group :value="modelValue.style" @update:value="(v) => modelValue.style = v">
+        <n-radio-button value="width">匹配页面宽度</n-radio-button>
+        <n-radio-button value="auto">确保图片不大于页面</n-radio-button>
+      </n-radio-group>
+    </n-form-item>
+    <n-form-item label="媒体文件" path="media">
       <media-selector :type="modelValue.scene"
-        :modelValue="modelValue.image" @update:model-value="(v) => modelValue.image = v">
+        :modelValue="modelValue.media" @update:model-value="(v) => modelValue.media = v">
       </media-selector>
     </n-form-item>
     <n-form-item label="控制" path="noSkipping">

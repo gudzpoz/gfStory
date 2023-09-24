@@ -21,7 +21,7 @@ export async function linesToMarkdown(lines: Line[], resolveImage = resolveBlobI
 ${line.text}`;
       }
       case 'scene':
-        return `[${line.scene}] [style:${line.style}] ${await resolveImage(line.image)}`;
+        return `[${line.scene}:${line.style}] ${await resolveImage(line.media)}`;
       default:
         return '';
     }

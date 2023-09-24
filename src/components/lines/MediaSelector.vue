@@ -42,7 +42,7 @@ watch(() => props.type, () => {
 });
 
 const renderLabel = (option: Option): VNodeChild => (
-  h(NSpace, { align: 'center' }, () => [
+  h(NSpace, { align: 'center', class: 'media-item', wrap: false }, () => [
     h(NButton, {
       onClick(e) {
         e.stopPropagation();

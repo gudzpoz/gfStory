@@ -10,6 +10,7 @@ const props = defineProps<{
 
 const story = new StoryInterpreter();
 const background = ref('');
+const style = ref<'auto' | 'width'>('auto');
 const narrator = ref('');
 const narratorColor = ref('');
 const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}">${narrator.value}</span>`);
@@ -24,6 +25,10 @@ function nextLine() {
       narratorColor.value = line.tags.color ?? '';
     } else if (line.tags.background !== undefined) {
       background.value = line.text.trim().replace(/\\/g, '');
+      const display = line.tags.background.trim();
+      if (display === 'auto' || display === 'width') {
+        style.value = display;
+      }
     } else if (line.tags.sprites !== undefined) {
       sprites.value = line.text.split('|')
         .map((s) => s.trim().replace(/\\/g, ''))
@@ -60,6 +65,7 @@ watch(() => props.chunk, updateStory);
 <template>
   <story-scene
     :background-url="background"
+    :background-style="style"
     :narrator-html="narratorHtml"
     :sprites="sprites"
     :text-html="text"

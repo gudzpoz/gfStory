@@ -16,8 +16,8 @@ export interface TextLine extends LineType {
 
 export interface SceneLine extends LineType {
   type: 'scene';
-  scene: 'background' | 'sprite';
-  image: string;
+  scene: 'background';
+  media: string;
   style: string;
 }
 
