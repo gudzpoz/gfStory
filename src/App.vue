@@ -14,11 +14,23 @@ import { compileMarkdown, linesToMarkdown } from './story/compiler';
 import { db, MEDIA_TYPES } from './db/media';
 
 const chunk = ref('');
-let story: Line[] = [];
+
+function loadStorageOrDefault() {
+  const saved = localStorage.getItem('story');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    if (parsed instanceof Array) {
+      return parsed as Line[];
+    }
+  }
+  return [defaultLine()];
+}
+let story: Line[] = loadStorageOrDefault();
 
 async function updateStory(s: Line[]) {
   story = s;
   chunk.value = await compileMarkdown(await linesToMarkdown(s));
+  localStorage.setItem('story', JSON.stringify(s));
 }
 
 async function exportStory() {
@@ -60,7 +72,7 @@ async function exportStory() {
   <n-config-provider :theme="darkTheme" :locale="zhCN">
     <n-layout has-sider sider-placement="right" style="height: 100vh">
       <n-layout-content>
-        <line-list :modelValue="[defaultLine()]"
+        <line-list :modelValue="story"
           @update:modelValue="updateStory"
           @export="exportStory"
         >

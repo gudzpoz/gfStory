@@ -143,9 +143,12 @@ function canMove(end: number) {
           <n-tag v-if="line.narrator !== ''" type="info">{{ line.narrator }}</n-tag>
           <span class="text-preview" v-text="pruneHtml(line.text)"></span>
         </n-space>
-        <n-tag v-else type="success">
-          {{ '功能节点' }}
-        </n-tag>
+        <n-space v-else>
+          <n-tag type="success">
+            {{ '功能节点' }}
+          </n-tag>
+          <span class="text-preview">{{ line.media }}</span>
+        </n-space>
       </template>
     </n-collapse-item>
   </n-collapse>
