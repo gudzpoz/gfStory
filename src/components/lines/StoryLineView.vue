@@ -16,7 +16,7 @@ defineProps<{
     <n-tab-pane name="text" tab="文本内容">
       <text-line-view :modelValue="(modelValue as TextLine)"></text-line-view>
     </n-tab-pane>
-    <n-tab-pane name="scene" tab="样式变化">
+    <n-tab-pane name="scene" tab="场景">
       <scene-line-view :modelValue="(modelValue as SceneLine)"></scene-line-view>
     </n-tab-pane>
   </n-tabs>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  NCheckbox, NForm, NFormItem, NRadioButton, NRadioGroup,
+  NForm, NFormItem, NRadioButton, NRadioGroup,
 } from 'naive-ui';
 
 import MediaSelector from './MediaSelector.vue';
@@ -24,6 +24,7 @@ if (!props.modelValue.scene) {
     <n-form-item label="类型" path="scene">
       <n-radio-group :value="modelValue.scene" @update:value="(v) => modelValue.scene = v">
         <n-radio-button value="background">背景图片</n-radio-button>
+        <n-radio-button value="audio">背景音乐</n-radio-button>
       </n-radio-group>
     </n-form-item>
     <n-form-item v-if="modelValue.scene === 'background'" label="显示方式" path="style">
@@ -36,14 +37,6 @@ if (!props.modelValue.scene) {
       <media-selector :type="modelValue.scene"
         :modelValue="modelValue.media" @update:model-value="(v) => modelValue.media = v">
       </media-selector>
-    </n-form-item>
-    <n-form-item label="控制" path="noSkipping">
-      <n-checkbox
-        :checked="modelValue.noSkipping"
-        @update:checked="(v) => modelValue.noSkipping = v"
-      >
-        阻止快进
-      </n-checkbox>
     </n-form-item>
   </n-form>
 </template>

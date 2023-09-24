@@ -9,6 +9,7 @@ const props = defineProps<{
 }>();
 
 const story = new StoryInterpreter();
+let backgroundMusic: HTMLAudioElement | null = null;
 const background = ref('');
 const style = ref<'auto' | 'width'>('auto');
 const narrator = ref('');
@@ -28,6 +29,17 @@ function nextLine() {
       const display = line.tags.background.trim();
       if (display === 'auto' || display === 'width') {
         style.value = display;
+      }
+    } else if (line.tags.audio !== undefined) {
+      const audio = line.text.trim().replace(/\\/g, '');
+      if (backgroundMusic !== null) {
+        backgroundMusic.pause();
+        backgroundMusic = null;
+      }
+      if (audio !== '') {
+        backgroundMusic = new Audio(audio);
+        backgroundMusic.loop = true;
+        backgroundMusic.play();
       }
     } else if (line.tags.sprites !== undefined) {
       sprites.value = line.text.split('|')
@@ -55,6 +67,8 @@ async function updateStory(chunk?: string) {
   narrator.value = '';
   narratorColor.value = '';
   text.value = '';
+  backgroundMusic?.pause();
+  backgroundMusic = null;
   story.reload(s);
   nextLine();
 }

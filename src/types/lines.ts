@@ -3,7 +3,6 @@ export const LINE_TYPES = ['text', 'scene'] as const;
 interface LineType {
   type: typeof LINE_TYPES[number];
   id: string;
-  noSkipping: boolean;
 }
 
 export interface TextLine extends LineType {
@@ -16,7 +15,7 @@ export interface TextLine extends LineType {
 
 export interface SceneLine extends LineType {
   type: 'scene';
-  scene: 'background';
+  scene: 'background' | 'audio';
   media: string;
   style: string;
 }
@@ -24,6 +23,9 @@ export interface SceneLine extends LineType {
 export type Line = TextLine | SceneLine;
 
 let id = 0;
+export function initUniqueId(previous: Line[]) {
+  id = previous.map((line) => parseInt(line.id, 10)).reduce((a, b) => Math.max(a, b));
+}
 export function nextId() {
   id += 1;
   return `${id}`;
@@ -33,7 +35,6 @@ export function defaultLine(): TextLine {
   return {
     type: 'text',
     id: nextId(),
-    noSkipping: false,
     narrator: '',
     text: '',
     narratorColor: '#ffffff',

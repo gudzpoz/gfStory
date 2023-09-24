@@ -15,6 +15,8 @@ export interface StoryLine {
     background?: string,
     style?: string,
 
+    audio?: string,
+
     sprites?: string,
   };
 }

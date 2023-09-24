@@ -9,7 +9,7 @@ import { ref } from 'vue';
 
 import LineList from './components/LineList.vue';
 import StoryTeller from './components/StoryTeller.vue';
-import { type Line, defaultLine } from './types/lines';
+import { type Line, defaultLine, initUniqueId } from './types/lines';
 import { compileMarkdown, linesToMarkdown } from './story/compiler';
 import { db, MEDIA_TYPES } from './db/media';
 
@@ -26,6 +26,7 @@ function loadStorageOrDefault() {
   return [defaultLine()];
 }
 let story: Line[] = loadStorageOrDefault();
+initUniqueId(story);
 
 async function updateStory(s: Line[]) {
   story = s;
