@@ -60,6 +60,12 @@ export class StoryInterpreter {
   async reload(chunk: string) {
     lua.lua_pushstring(this.L, to_luastring(chunk));
     lua.lua_setglobal(this.L, 's');
+    /*
+     * This is a work-around: only "print" and "require"
+     * are allowed to get injected into the brocatel env.
+     *
+     * TODO: Should fix that in brocatel soon.
+     */
     this.run(`story=vm.load_vm(s, nil, {
       print = {
         defineCharacters = defineCharacters,

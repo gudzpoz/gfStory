@@ -11,16 +11,17 @@ import { computed, provide, ref } from 'vue';
 import CharacterList from './character/CharacterList.vue';
 import StoryLineView from './lines/StoryLineView.vue';
 import {
-  defaultLine, nextId, type Line, type TextLine,
+  defaultLine, nextId, type GfStory, type TextLine,
 } from '../types/lines';
-import { labelCharactersWithIds, type Character } from '../types/character';
+import { labelCharactersWithIds } from '../types/character';
 
 const props = defineProps<{
-  characters: Character[],
-  modelValue: Array<Line>,
+  modelValue: GfStory,
 }>();
-const lines = ref(props.modelValue);
-provide('characters', computed(() => labelCharactersWithIds(props.characters)));
+const characters = ref(props.modelValue.characters);
+const lines = ref(props.modelValue.lines);
+
+provide('characters', computed(() => labelCharactersWithIds(characters.value)));
 provide('narrators', computed(() => {
   const narrators = lines.value
     .filter((line) => line.type === 'text' && line.narrator !== '')
@@ -34,7 +35,7 @@ provide('narrators', computed(() => {
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
-  (event: 'update:modelValue', modelValue: Array<Line>): void,
+  (event: 'update:modelValue', modelValue: GfStory): void,
   (event: 'export'): void,
 }>();
 
@@ -116,7 +117,10 @@ function canMove(end: number) {
 </script>
 
 <template>
-  <character-list v-model:show="shouldShowCharacterList" :modelValue="characters"></character-list>
+  <character-list v-model:show="shouldShowCharacterList" :modelValue="characters"
+    @update:modelValue="(v) => characters = v"
+  >
+  </character-list>
   <n-card class="list-operations">
     <n-button-group>
       <n-button @click="showCharacterList" type="warning">
@@ -137,10 +141,10 @@ function canMove(end: number) {
       <n-button @click="moveDown" secondary type="primary" :disabled="!canMove(lines.length - 1)">
         <n-icon><move-down-filled></move-down-filled></n-icon>下移
       </n-button>
-      <n-button @click="emit('update:modelValue', lines)" type="warning">
+      <n-button @click="emit('update:modelValue', modelValue)" type="warning">
         <n-icon><refresh-filled></refresh-filled></n-icon>预览故事
       </n-button>
-      <n-button @click="emit('update:modelValue', lines); emit('export')" type="primary">
+      <n-button @click="emit('update:modelValue', modelValue); emit('export')" type="primary">
         <n-icon><download-filled></download-filled></n-icon>导出故事
       </n-button>
     </n-button-group>

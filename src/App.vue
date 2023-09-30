@@ -12,8 +12,7 @@ import { ref } from 'vue';
 import LineList from './components/LineList.vue';
 import StoryTeller from './components/StoryTeller.vue';
 import {
-  defaultLine, initUniqueId,
-  type Line, type GfStory,
+  defaultLine, initUniqueId, type GfStory,
 } from './types/lines';
 import { compileMarkdown, linesToMarkdown } from './story/compiler';
 import { db, MEDIA_TYPES } from './db/media';
@@ -36,8 +35,13 @@ function loadStorageOrDefault(): GfStory {
 const story = loadStorageOrDefault();
 initUniqueId(story);
 
-async function updateStory(s: Line[]) {
-  story.lines = s;
+async function updateStory(s: GfStory) {
+  /*
+   * "story" and "s" should actually be the same object.
+   * We are doing the following... for fun.
+   */
+  story.characters = s.characters;
+  story.lines = s.lines;
   chunk.value = await compileMarkdown(await linesToMarkdown(story));
   localStorage.setItem('story', JSON.stringify(story));
 }
@@ -83,8 +87,7 @@ async function exportStory() {
       <n-notification-provider>
         <n-layout has-sider sider-placement="right" style="height: 100vh">
           <n-layout-content>
-            <line-list :modelValue="story.lines"
-              :characters="story.characters"
+            <line-list :modelValue="story"
               @update:modelValue="updateStory"
               @export="exportStory"
             >

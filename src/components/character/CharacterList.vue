@@ -4,7 +4,7 @@ import {
   NList, NListItem, NModal,
   NSpace, NTag,
 } from 'naive-ui';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import {
   AddFilled, EditFilled, RemoveFilled,
 } from '@vicons/material';
@@ -22,7 +22,13 @@ const characters = ref(props.modelValue);
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void,
+  (event: 'update:modelValue', modelValue: Character[]): void,
 }>();
+
+function update() {
+  emit('update:modelValue', characters.value);
+}
+watch(() => props.show, update);
 
 function addCharacter() {
   const name = '角色';
@@ -44,9 +50,10 @@ function edit(character: Character) {
 <template>
   <character-settings v-if="currentCharacter" v-model="currentCharacter"
     v-model:show="showEditor" :characters="characters"
+    @update:show="update()"
   >
   </character-settings>
-  <n-modal :show="show" @update:show="(v) => emit('update:show', v)"
+  <n-modal :show="show" @update:show="(v) => { update(); emit('update:show', v); }"
     preset="card" title="人物列表"
   >
     <n-list>
@@ -55,7 +62,7 @@ function edit(character: Character) {
           <n-button type="warning" @click="edit(character)">
             <n-icon><edit-filled></edit-filled></n-icon>
           </n-button>
-          <n-button type="error" @click="characters.splice(i, 1)">
+          <n-button type="error" @click="characters.splice(i, 1) && update()">
             <n-icon><remove-filled></remove-filled></n-icon>
           </n-button>
           <n-tag type="info">{{ character.name }}</n-tag>
