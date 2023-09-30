@@ -1,5 +1,6 @@
 import { BrocatelCompiler } from '@brocatel/mdc';
 
+import { type Character } from '../types/character';
 import { type GfStory } from '../types/lines';
 import { db } from '../db/media';
 
@@ -7,8 +8,8 @@ function resolveBlobImage(s: string) {
   return db.toDataUrl(s);
 }
 
-function exportCharacters(story: GfStory) {
-  const json = JSON.stringify(story.characters);
+function exportCharacters(characters: Character[]) {
+  const json = JSON.stringify(characters);
   return `\`\`\`lua global
 print.defineCharacters(${JSON.stringify(json)})
 \`\`\``;
@@ -24,13 +25,18 @@ print.preloadResources(${JSON.stringify(content)})
 
 export async function linesToMarkdown(story: GfStory, resolveImage = resolveBlobImage) {
   const preloaded: string[] = [];
+  const characters: Character[] = await Promise.all(story.characters.map(async (c) => ({
+    name: c.name,
+    sprites: await Promise.all(c.sprites.map(async (s) => {
+      const copy = { ...s };
+      copy.url = await resolveImage(copy.url);
+      return copy;
+    })),
+  })));
   const segments = await Promise.all(story.lines.map(async (line) => {
     switch (line.type) {
       case 'text': {
-        const sprites = (await Promise.all(
-          line.sprites.map(resolveImage),
-        ));
-        return `:sprites[${sprites.join('|')}] \
+        return `:sprites[${line.sprites.join('|')}] \
 :narrator[${line.narrator}] \
 :color[${line.narratorColor}] \
 ${line.text}`;
@@ -45,7 +51,7 @@ ${line.text}`;
     }
   }));
   return `
-${exportCharacters(story)}
+${exportCharacters(characters)}
 
 ${exportPreloaded(preloaded)}
 

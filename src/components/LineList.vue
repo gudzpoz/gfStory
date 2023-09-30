@@ -13,13 +13,14 @@ import StoryLineView from './lines/StoryLineView.vue';
 import {
   defaultLine, nextId, type Line, type TextLine,
 } from '../types/lines';
+import { labelCharactersWithIds, type Character } from '../types/character';
 
-const props = withDefaults(defineProps<{
-  modelValue?: Array<Line>,
-}>(), {
-  modelValue: () => [],
-});
+const props = defineProps<{
+  characters: Character[],
+  modelValue: Array<Line>,
+}>();
 const lines = ref(props.modelValue);
+provide('characters', computed(() => labelCharactersWithIds(props.characters)));
 provide('narrators', computed(() => {
   const narrators = lines.value
     .filter((line) => line.type === 'text' && line.narrator !== '')
@@ -115,7 +116,7 @@ function canMove(end: number) {
 </script>
 
 <template>
-  <character-list v-model:show="shouldShowCharacterList" :modelValue="[]"></character-list>
+  <character-list v-model:show="shouldShowCharacterList" :modelValue="characters"></character-list>
   <n-card class="list-operations">
     <n-button-group>
       <n-button @click="showCharacterList" type="warning">

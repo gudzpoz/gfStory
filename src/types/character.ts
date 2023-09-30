@@ -44,3 +44,62 @@ export function getUniqueName(name: string, objects: { name: string }[], limit =
   } while (!isUnique(unique, objects, limit));
   return unique;
 }
+
+export type NamePath = readonly [string, string];
+
+export type SpritePath = readonly [Character, CharacterSprite];
+
+export function getNamePath(path: SpritePath): NamePath {
+  return [path[0].name, path[1].name];
+}
+
+export function getNumericPath(path: NamePath, characters: Character[]): number[] {
+  if (path.length !== 2) {
+    return [];
+  }
+  const i = characters.findIndex((c) => c.name === path[0]);
+  if (i === -1) {
+    return [];
+  }
+  const character = characters[i];
+  const j = character.sprites.findIndex((s) => s.name === path[1]);
+  if (j === -1) {
+    return [];
+  }
+  return [i, j];
+}
+
+export function getSprite(path: NamePath, characters: Character[]) {
+  const [i, j] = getNumericPath(path, characters);
+  if (i !== undefined && j !== undefined) {
+    return characters[i].sprites[j];
+  }
+  return null;
+}
+
+export interface SpriteWithId extends CharacterSprite {
+  id: number;
+}
+
+export interface CharacterWithId extends Character {
+  id: number;
+  sprites: SpriteWithId[];
+}
+
+export function labelCharactersWithIds(characters: Character[]): CharacterWithId[] {
+  let id = 0;
+  return characters.map((c) => {
+    id += 1;
+    return {
+      id,
+      name: c.name,
+      sprites: c.sprites.map((s) => {
+        id += 1;
+        return {
+          id,
+          ...s,
+        };
+      }),
+    };
+  });
+}

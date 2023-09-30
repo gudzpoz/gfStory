@@ -5,6 +5,7 @@ import {
 
 import StoryScene from './StoryScene.vue';
 import { StoryInterpreter } from '../story/interpreter';
+import type { CharacterSprite } from '../types/character';
 
 const props = defineProps<{
   chunk?: string,
@@ -17,7 +18,7 @@ const style = ref<'auto' | 'width'>('auto');
 const narrator = ref('');
 const narratorColor = ref('');
 const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}">${narrator.value}</span>`);
-const sprites = ref<string[]>([]);
+const sprites = ref<CharacterSprite[]>([]);
 const text = ref('');
 
 function nextLine() {
@@ -46,7 +47,8 @@ function nextLine() {
       if (line.tags.sprites !== undefined) {
         sprites.value = line.tags.sprites.split('|')
           .map((s) => s.trim().replace(/\\/g, ''))
-          .filter((s) => s !== '');
+          .map((s) => (s === '' ? null : story.getImage(s)))
+          .filter((s) => s) as CharacterSprite[];
       }
       text.value = line.text;
       return;

@@ -84,6 +84,7 @@ async function exportStory() {
         <n-layout has-sider sider-placement="right" style="height: 100vh">
           <n-layout-content>
             <line-list :modelValue="story.lines"
+              :characters="story.characters"
               @update:modelValue="updateStory"
               @export="exportStory"
             >

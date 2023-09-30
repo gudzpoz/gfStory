@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import {
-  NColorPicker, NForm, NFormItem, NSelect,
+  NColorPicker, NForm, NFormItem, NFormItemRow, NSelect,
 } from 'naive-ui';
 import { inject, ref, type Ref } from 'vue';
 
-import SpriteSelector from './SpriteSelector.vue';
+import CharacterListSelector from '../character/CharacterListSelector.vue';
 import ClassicEditor from './editor';
 import { type TextLine } from '../../types/lines';
+import type { CharacterWithId } from '../../types/character';
 
 const props = defineProps<{
   modelValue: TextLine,
 }>();
+const characters = inject<Ref<CharacterWithId[]>>('characters')!;
 const narrators = inject<Ref<{ value: string }[]>>('narrators')!;
 
 const color = ref(props.modelValue.narratorColor);
@@ -19,6 +21,10 @@ const color = ref(props.modelValue.narratorColor);
 <template>
   <!-- eslint-disable vue/no-mutating-props -->
   <n-form inline :modelValue="modelValue" style="flex-wrap: wrap">
+    <n-form-item-row label="立绘" path="tachie">
+      <character-list-selector :characters="characters" :modelValue="modelValue.sprites">
+      </character-list-selector>
+    </n-form-item-row>
     <n-form-item label="名称显示" path="narrator" class="narrator">
       <n-select
         :value="modelValue.narrator"
@@ -36,9 +42,6 @@ const color = ref(props.modelValue.narratorColor);
         :modes="['hex']"
         @update:value="(v) => color = modelValue.narratorColor = v"
       ></n-color-picker>
-    </n-form-item>
-    <n-form-item label="立绘" path="tachie">
-      <sprite-selector :modelValue="modelValue.sprites"></sprite-selector>
     </n-form-item>
     <n-form-item class="n-ck-editor" label="文字内容">
       <ckeditor :editor="ClassicEditor"

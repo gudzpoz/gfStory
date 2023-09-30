@@ -13,6 +13,7 @@ import { db, type MediaUrl } from '../../db/media';
 
 const props = defineProps<{
   wide?: boolean,
+  removable?: boolean,
   url: MediaUrl,
 }>();
 
@@ -55,7 +56,7 @@ function play(state: boolean) {
 <template>
   <n-space align="center" class="media-item" :wrap="false">
     <n-button type="error" size="tiny"
-      @click.stop="emit('remove')" v-if="wide"
+      @click.stop="emit('remove')" v-if="wide && removable !== false"
     >
       <n-icon><close-filled></close-filled></n-icon>
     </n-button>
@@ -67,7 +68,10 @@ function play(state: boolean) {
         <play-arrow-filled v-show="!playing"></play-arrow-filled>
       </n-icon>
     </n-icon-wrapper>
-    <n-icon-wrapper v-else-if="!dataUrl || dataUrl === ''">
+    <n-icon-wrapper v-else-if="!dataUrl || dataUrl === ''" class="n-avatar"
+      color="grey"
+      :size="35"
+    >
       <n-icon>
         <question-mark-filled></question-mark-filled>
       </n-icon>
@@ -88,15 +92,15 @@ function play(state: boolean) {
   align-items: center;
   justify-content: center;
   margin: 0.2em;
-  width: 2.5em;
-  height: 2.5em;
+  width: 35px;
+  height: 35px;
   pointer-events: all;
 }
 .n-space.media-item .n-avatar img {
   width: fit-content;
   height: fit-content;
-  max-width: 2.5em;
-  max-height: 2.5em;
+  max-width: 35px;
+  max-height: 35px;
   object-fit: cover;
 }
 .n-select .n-space.media-item .n-button {

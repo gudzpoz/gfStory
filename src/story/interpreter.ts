@@ -1,7 +1,7 @@
 import { fengari } from '@brocatel/mdc';
 import vm from '@brocatel/mdc/dist/vm-bundle.lua?raw';
 
-import type { Character } from '../types/character';
+import type { Character, CharacterSprite } from '../types/character';
 
 const {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -33,13 +33,13 @@ export class StoryInterpreter {
 
   resources: string[];
 
-  preloadedImages: HTMLImageElement[];
+  preloadedImages: Record<string, [HTMLImageElement, CharacterSprite]>;
 
   constructor() {
     this.loaded = false;
     this.characters = [];
     this.resources = [];
-    this.preloadedImages = [];
+    this.preloadedImages = {};
 
     this.L = lauxlib.luaL_newstate();
     lualib.luaL_openlibs(this.L);
@@ -70,16 +70,23 @@ export class StoryInterpreter {
     this.loaded = true;
   }
 
+  getImage(s: string): CharacterSprite {
+    return this.preloadedImages[s][1];
+  }
+
   async preloadResources() {
-    const images = this.characters.flatMap((c) => c.sprites.map((s) => s.url)).map((url) => {
+    this.preloadedImages = {};
+    const images = this.characters.flatMap((c) => c.sprites.map((s) => {
       const image = new Image();
-      return new Promise<HTMLImageElement>((resolve, reject) => {
-        image.src = url;
-        image.onload = () => resolve(image);
+      return new Promise<[string, [HTMLImageElement, CharacterSprite]]>((resolve, reject) => {
+        image.src = s.url;
+        image.onload = () => resolve(
+          [`${c.name}/${s.name}`, [image, s] as [HTMLImageElement, CharacterSprite]],
+        );
         image.onerror = reject;
       });
-    });
-    this.preloadedImages = await Promise.all(images);
+    }));
+    this.preloadedImages = Object.fromEntries(await Promise.all(images));
   }
 
   next(option?: number): StoryLine | undefined {

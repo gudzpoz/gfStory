@@ -8,11 +8,13 @@ import circleSvg from '../assets/circle.svg?raw';
 // eslint-disable-next-line import/no-unresolved
 import gfSystemSvg from '../assets/G.F.system.svg?raw';
 
+import type { CharacterSprite } from '../types/character';
+
 const props = defineProps<{
   backgroundUrl: string,
   backgroundStyle: 'auto' | 'width',
   narratorHtml: string,
-  sprites: string[],
+  sprites: CharacterSprite[],
   textHtml: string,
   textHeight?: string,
 }>();
@@ -58,14 +60,14 @@ onMounted(() => {
   background.value!.onload = rescaleImage;
 });
 
-type Sprite = {
+interface Sprite extends CharacterSprite {
   left: number;
   opacity: number;
-  url: string;
-};
+}
+
 const spritesOnStage = ref<Sprite[]>([]);
 watch(() => props.sprites, (sprites) => {
-  const newUrls = new Set(sprites);
+  const newUrls = new Set(sprites.map((s) => s.url));
   spritesOnStage.value.filter((s) => !newUrls.has(s.url))
     // eslint-disable-next-line no-param-reassign
     .forEach((s) => { s.left -= 20; s.opacity = 0; });
@@ -78,14 +80,14 @@ watch(() => props.sprites, (sprites) => {
 
   sprites.forEach((sprite, i) => {
     const left = (2 * i + 1) * unit;
-    const index = spritesOnStage.value.findIndex((s) => s.url === sprite);
+    const index = spritesOnStage.value.findIndex((s) => s.url === sprite.url);
     if (index !== -1) {
       spritesOnStage.value[index].left = left;
     } else {
       const item: Sprite = reactive({
         left: left - 20,
         opacity: 0,
-        url: sprite,
+        ...sprite,
       });
       spritesOnStage.value.push(item);
       setTimeout(() => {
