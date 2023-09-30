@@ -4,10 +4,11 @@ import {
 } from 'naive-ui';
 import {
   AddFilled, ContentPasteFilled, DeleteFilled, DownloadFilled,
-  MoveDownFilled, MoveUpFilled, RefreshFilled,
+  MoveDownFilled, MoveUpFilled, PeopleFilled, RefreshFilled,
 } from '@vicons/material';
 import { computed, provide, ref } from 'vue';
 
+import CharacterList from './character/CharacterList.vue';
 import StoryLineView from './lines/StoryLineView.vue';
 import {
   defaultLine, nextId, type Line, type TextLine,
@@ -35,6 +36,11 @@ const emit = defineEmits<{
   (event: 'update:modelValue', modelValue: Array<Line>): void,
   (event: 'export'): void,
 }>();
+
+const shouldShowCharacterList = ref(false);
+function showCharacterList() {
+  shouldShowCharacterList.value = true;
+}
 
 const names = ref<Array<string>>([]);
 
@@ -109,8 +115,12 @@ function canMove(end: number) {
 </script>
 
 <template>
+  <character-list v-model:show="shouldShowCharacterList" :modelValue="[]"></character-list>
   <n-card class="list-operations">
     <n-button-group>
+      <n-button @click="showCharacterList" type="warning">
+        <n-icon><people-filled></people-filled></n-icon>编辑角色
+      </n-button>
       <n-button @click="appendDefaultLine" type="primary">
         <n-icon><add-filled></add-filled></n-icon>添加节点
       </n-button>

@@ -13,8 +13,8 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@brocatel/mdc": "^0.3.0",
-    "@brocatel/mde": "^0.3.0",
+    "@brocatel/mdc": "^0.3.1",
+    "@brocatel/mde": "^0.3.1",
     "@ckeditor/ckeditor5-alignment": "^39.0.2",
     "@ckeditor/ckeditor5-basic-styles": "^39.0.2",
     "@ckeditor/ckeditor5-editor-classic": "^39.0.2",
@@ -29,7 +29,8 @@
     "jszip": "^3.10.1",
     "naive-ui": "^2.34.4",
     "vfonts": "^0.0.3",
-    "vue": "^3.3.4"
+    "vue": "^3.3.4",
+    "vue-advanced-cropper": "^2.8.8"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-theme-lark": "^39.0.2",

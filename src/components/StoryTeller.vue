@@ -23,10 +23,7 @@ const text = ref('');
 function nextLine() {
   let line = story.next();
   while (line) {
-    if (line.tags.narrator !== undefined) {
-      narrator.value = line.text.trim();
-      narratorColor.value = line.tags.color ?? '';
-    } else if (line.tags.background !== undefined) {
+    if (line.tags.background !== undefined) {
       background.value = line.text.trim().replace(/\\/g, '');
       const display = line.tags.background.trim();
       if (display === 'auto' || display === 'width') {
@@ -43,11 +40,14 @@ function nextLine() {
         backgroundMusic.loop = true;
         backgroundMusic.play();
       }
-    } else if (line.tags.sprites !== undefined) {
-      sprites.value = line.text.split('|')
-        .map((s) => s.trim().replace(/\\/g, ''))
-        .filter((s) => s !== '');
     } else {
+      narrator.value = line.tags.narrator ?? '';
+      narratorColor.value = line.tags.color ?? '';
+      if (line.tags.sprites !== undefined) {
+        sprites.value = line.tags.sprites.split('|')
+          .map((s) => s.trim().replace(/\\/g, ''))
+          .filter((s) => s !== '');
+      }
       text.value = line.text;
       return;
     }
@@ -71,7 +71,7 @@ async function updateStory(chunk?: string) {
   text.value = '';
   backgroundMusic?.pause();
   backgroundMusic = null;
-  story.reload(s);
+  await story.reload(s);
   nextLine();
 }
 updateStory(props.chunk);

@@ -3,7 +3,9 @@ import {
   NAvatar, NButton, NIcon, NIconWrapper, NImage, NPopover, NSpace,
 } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
-import { CloseFilled, PlayArrowFilled, PauseFilled } from '@vicons/material';
+import {
+  CloseFilled, PlayArrowFilled, PauseFilled, QuestionMarkFilled,
+} from '@vicons/material';
 
 import 'vue-advanced-cropper/dist/style.css';
 
@@ -65,6 +67,11 @@ function play(state: boolean) {
         <play-arrow-filled v-show="!playing"></play-arrow-filled>
       </n-icon>
     </n-icon-wrapper>
+    <n-icon-wrapper v-else-if="!dataUrl || dataUrl === ''">
+      <n-icon>
+        <question-mark-filled></question-mark-filled>
+      </n-icon>
+    </n-icon-wrapper>
     <n-popover v-else trigger="hover">
       <n-image :src="dataUrl" width="200"></n-image>
       <template #trigger>
@@ -90,6 +97,7 @@ function play(state: boolean) {
   height: fit-content;
   max-width: 2.5em;
   max-height: 2.5em;
+  object-fit: cover;
 }
 .n-select .n-space.media-item .n-button {
   display: none;

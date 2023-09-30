@@ -24,9 +24,14 @@ export interface SceneLine extends LineType {
 
 export type Line = TextLine | SceneLine;
 
+export interface GfStory {
+  characters: Character[];
+  lines: Line[];
+}
+
 let id = 0;
-export function initUniqueId(previous: Line[]) {
-  id = previous.map((line) => parseInt(line.id, 10)).reduce((a, b) => Math.max(a, b));
+export function initUniqueId(previous: GfStory) {
+  id = previous.lines.map((line) => parseInt(line.id, 10)).reduce((a, b) => Math.max(a, b));
 }
 export function nextId() {
   id += 1;
@@ -42,9 +47,4 @@ export function defaultLine(): TextLine {
     narratorColor: '#ffffff',
     sprites: [],
   };
-}
-
-export interface GfStory {
-  characters: Character[];
-  lines: Line[];
 }

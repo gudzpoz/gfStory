@@ -11,29 +11,35 @@ import { ref } from 'vue';
 
 import LineList from './components/LineList.vue';
 import StoryTeller from './components/StoryTeller.vue';
-import { type Line, defaultLine, initUniqueId } from './types/lines';
+import {
+  defaultLine, initUniqueId,
+  type Line, type GfStory,
+} from './types/lines';
 import { compileMarkdown, linesToMarkdown } from './story/compiler';
 import { db, MEDIA_TYPES } from './db/media';
 
 const chunk = ref('');
 
-function loadStorageOrDefault() {
+function loadStorageOrDefault(): GfStory {
   const saved = localStorage.getItem('story');
   if (saved) {
     const parsed = JSON.parse(saved);
-    if (parsed instanceof Array) {
-      return parsed as Line[];
+    if (!(parsed instanceof Array)) {
+      return parsed as GfStory;
     }
   }
-  return [defaultLine()];
+  return {
+    characters: [],
+    lines: [defaultLine()],
+  };
 }
-let story: Line[] = loadStorageOrDefault();
+const story = loadStorageOrDefault();
 initUniqueId(story);
 
 async function updateStory(s: Line[]) {
-  story = s;
-  chunk.value = await compileMarkdown(await linesToMarkdown(s));
-  localStorage.setItem('story', JSON.stringify(s));
+  story.lines = s;
+  chunk.value = await compileMarkdown(await linesToMarkdown(story));
+  localStorage.setItem('story', JSON.stringify(story));
 }
 
 async function exportStory() {
@@ -77,7 +83,7 @@ async function exportStory() {
       <n-notification-provider>
         <n-layout has-sider sider-placement="right" style="height: 100vh">
           <n-layout-content>
-            <line-list :modelValue="story"
+            <line-list :modelValue="story.lines"
               @update:modelValue="updateStory"
               @export="exportStory"
             >
