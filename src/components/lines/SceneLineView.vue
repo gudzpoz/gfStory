@@ -3,7 +3,7 @@ import {
   NForm, NFormItem, NRadioButton, NRadioGroup,
 } from 'naive-ui';
 
-import MediaSelector from './MediaSelector.vue';
+import MediaSelector from '../media/MediaSelector.vue';
 import { type SceneLine } from '../../types/lines';
 
 const props = defineProps<{

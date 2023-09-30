@@ -3,7 +3,9 @@ import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
 import {
   darkTheme, zhCN,
-  NConfigProvider, NLayout, NLayoutContent, NLayoutSider,
+  NConfigProvider, NDialogProvider,
+  NLayout, NLayoutContent, NLayoutSider,
+  NNotificationProvider,
 } from 'naive-ui';
 import { ref } from 'vue';
 
@@ -71,18 +73,22 @@ async function exportStory() {
 
 <template>
   <n-config-provider :theme="darkTheme" :locale="zhCN">
-    <n-layout has-sider sider-placement="right" style="height: 100vh">
-      <n-layout-content>
-        <line-list :modelValue="story"
-          @update:modelValue="updateStory"
-          @export="exportStory"
-        >
-        </line-list>
-      </n-layout-content>
-      <n-layout-sider show-trigger="arrow-circle" width="500px" bordered>
-        <story-teller :chunk="chunk"></story-teller>
-      </n-layout-sider>
-    </n-layout>
+    <n-dialog-provider>
+      <n-notification-provider>
+        <n-layout has-sider sider-placement="right" style="height: 100vh">
+          <n-layout-content>
+            <line-list :modelValue="story"
+              @update:modelValue="updateStory"
+              @export="exportStory"
+            >
+            </line-list>
+          </n-layout-content>
+          <n-layout-sider show-trigger="arrow-circle" width="500px" bordered>
+            <story-teller :chunk="chunk"></story-teller>
+          </n-layout-sider>
+        </n-layout>
+      </n-notification-provider>
+    </n-dialog-provider>
   </n-config-provider>
 </template>
 

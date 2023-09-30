@@ -1,39 +1,90 @@
 import Dexie, { liveQuery, type Table } from 'dexie';
+import { ref, type Ref } from 'vue';
 
 export const MEDIA_TYPES = ['audio', 'background', 'sprite'] as const;
 
-export const ACCEPTED: { [key in typeof MEDIA_TYPES[number]]: string } = {
+export const ACCEPTED: Record<typeof MEDIA_TYPES[number], string> = {
   audio: 'audio/*',
   background: 'image/*',
   sprite: 'image/*',
 };
 
-export interface Media {
+export interface RawMedia {
   name: string;
   blob: Blob;
 }
 
+export interface Media extends RawMedia {
+  type: typeof MEDIA_TYPES[number];
+  value: string;
+}
+
+export type MediaUrl = string;
+
 export class MediaDatabase extends Dexie {
-  audio!: Table<Media>;
+  private audio!: Table<RawMedia>;
 
-  background!: Table<Media>;
+  private background!: Table<RawMedia>;
 
-  sprite!: Table<Media>;
+  private sprite!: Table<RawMedia>;
 
-  cache: { [key in typeof MEDIA_TYPES[number]]: { [key: string]: string } };
+  private cache: Record<typeof MEDIA_TYPES[number], Record<MediaUrl, string>>;
+
+  private refs: Record<typeof MEDIA_TYPES[number], Ref<Media[]>>;
 
   constructor() {
     super('media');
     this.version(1).stores(Object.fromEntries(MEDIA_TYPES.map((type) => [type, 'name, blob'])));
     this.cache = { audio: {}, background: {}, sprite: {} };
+    this.refs = {
+      audio: this.liveQueryAll('audio'),
+      background: this.liveQueryAll('background'),
+      sprite: this.liveQueryAll('sprite'),
+    };
   }
 
-  liveQueryAll(type: typeof MEDIA_TYPES[number]) {
-    return liveQuery(async () => this[type].toArray());
+  getMediaItems(type: typeof MEDIA_TYPES[number]) {
+    return this.refs[type];
   }
 
-  async toDataUrl(s: string) {
-    const [t, name] = s.split(':', 2);
+  // eslint-disable-next-line class-methods-use-this
+  getMediaUrl(type: typeof MEDIA_TYPES[number], name: string): MediaUrl {
+    return `${type}:${name}`;
+  }
+
+  /**
+   * Calls the listener whenever the database updates.
+   *
+   * @param type the type of media changes to listen to
+   * @param listener the callback
+   * @returns a handle that cancels the subscription when called
+   */
+  private liveQueryAll(type: typeof MEDIA_TYPES[number]) {
+    const items = ref<Media[]>([]);
+    liveQuery(async () => this[type].toArray())
+      .subscribe((raw) => {
+        items.value = raw.map((r) => ({
+          type,
+          value: this.getMediaUrl(type, r.name),
+          ...r,
+        }));
+      });
+    return items;
+  }
+
+  getMediaDataUrl(type: typeof MEDIA_TYPES[number], media: RawMedia) {
+    const url = URL.createObjectURL(media.blob);
+    this.cache[type][media.name] = url;
+    return url;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  splitMediaUrl(s: MediaUrl): [typeof MEDIA_TYPES[number], string] {
+    return s.split(':', 2) as [typeof MEDIA_TYPES[number], string];
+  }
+
+  async toDataUrl(s: MediaUrl) {
+    const [t, name] = this.splitMediaUrl(s);
     const type = t as typeof MEDIA_TYPES[number];
     if (this.cache[type][name]) {
       return this.cache[type][name];
@@ -42,9 +93,7 @@ export class MediaDatabase extends Dexie {
     if (!media) {
       return '';
     }
-    const url = URL.createObjectURL(media.blob);
-    this.cache[type][name] = url;
-    return url;
+    return this.getMediaDataUrl(type, media);
   }
 
   deleteMedia(type: typeof MEDIA_TYPES[number], name: string) {

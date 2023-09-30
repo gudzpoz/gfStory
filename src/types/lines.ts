@@ -1,3 +1,5 @@
+import type { Character } from './character';
+
 export const LINE_TYPES = ['text', 'scene'] as const;
 
 interface LineType {
@@ -40,4 +42,9 @@ export function defaultLine(): TextLine {
     narratorColor: '#ffffff',
     sprites: [],
   };
+}
+
+export interface GfStory {
+  characters: Character[];
+  lines: Line[];
 }

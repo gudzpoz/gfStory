@@ -171,6 +171,7 @@ function canMove(end: number) {
 
 .list-operations {
   position: sticky;
+  overflow-x: scroll;
   top: 0;
   z-index: 1;
 }

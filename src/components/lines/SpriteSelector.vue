@@ -4,7 +4,7 @@ import {
 } from 'naive-ui';
 import { AddFilled, DeleteFilled } from '@vicons/material';
 
-import MediaSelector from './MediaSelector.vue';
+import MediaSelector from '../media/MediaSelector.vue';
 
 defineProps<{
   modelValue: string[],
