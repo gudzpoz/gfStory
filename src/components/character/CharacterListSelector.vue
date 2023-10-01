@@ -14,6 +14,7 @@ import type { Character } from '../../types/character';
 
 const props = defineProps<{
   modelValue: string[],
+  remote: Record<string, boolean>,
   characters: Character[],
 }>();
 const selected = ref<string[]>(props.modelValue);
@@ -34,7 +35,7 @@ function exchange(i: number, j: number) {
     <n-space vertical>
       <n-space v-for="sprite, i in selected" :key="sprite">
         <character-selector :modelValue="sprite" :characters="characters"
-          @update:modelValue="(v) => modelValue[i] = v"
+          :remoteRecord="remote" @update:modelValue="(v) => modelValue[i] = v"
         >
         </character-selector>
         <n-button @click="exchange(i - 1, i)">

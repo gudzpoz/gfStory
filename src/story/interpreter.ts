@@ -20,6 +20,7 @@ export interface StoryLine {
     audio?: string,
 
     sprites?: string,
+    remote?: string,
   };
 }
 

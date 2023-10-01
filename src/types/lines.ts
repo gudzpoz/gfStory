@@ -10,6 +10,7 @@ interface LineType {
 export interface TextLine extends LineType {
   type: 'text';
   narrator: string;
+  remote: Record<string, boolean>;
   text: string;
   narratorColor: string;
   sprites: string[];
@@ -45,6 +46,7 @@ export function defaultLine(): TextLine {
     type: 'text',
     id: nextId(),
     narrator: '',
+    remote: {},
     text: '',
     narratorColor: '#ffffff',
     sprites: [],

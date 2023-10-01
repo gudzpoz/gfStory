@@ -22,6 +22,7 @@ const props = defineProps<{
   backgroundStyle: 'contain' | 'cover',
   narratorHtml: string,
   sprites: SpriteImage[],
+  remote: Set<string>,
   textHtml: string,
   textHeight?: string,
 }>();
@@ -70,6 +71,7 @@ function computeCenter(i: number) {
           :sprite="sprite"
           :center="computeCenter(i)"
           :container="backgroundSpace!"
+          :framed="remote.has(sprite.id)"
           :key="sprite.id"
         >
         </sprite-image-view>

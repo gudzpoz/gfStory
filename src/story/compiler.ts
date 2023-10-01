@@ -41,6 +41,7 @@ export async function linesToMarkdown(story: GfStory, resolveImage = resolveBlob
     switch (line.type) {
       case 'text': {
         return `:sprites[${line.sprites.join('|')}] \
+:remote[${Object.entries(line.remote).filter((e) => e[1]).map((e) => e[0]).join('|')}] \
 :narrator[${line.narrator}] \
 :color[${line.narratorColor}] \
 ${line.text}`;

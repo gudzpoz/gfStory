@@ -22,7 +22,9 @@ const color = ref(props.modelValue.narratorColor);
   <!-- eslint-disable vue/no-mutating-props -->
   <n-form inline :modelValue="modelValue" style="flex-wrap: wrap">
     <n-form-item-row label="立绘" path="tachie">
-      <character-list-selector :characters="characters" :modelValue="modelValue.sprites">
+      <character-list-selector :characters="characters" :modelValue="modelValue.sprites"
+        :remote="modelValue.remote"
+      >
       </character-list-selector>
     </n-form-item-row>
     <n-form-item label="名称显示" path="narrator" class="narrator">

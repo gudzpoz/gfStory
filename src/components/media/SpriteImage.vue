@@ -8,30 +8,49 @@ const props = defineProps<{
   framed?: boolean,
 }>();
 
-const idealRatio = 0.6;
+const idealHeightRatio = 0.6;
+const idealWHRatio = 11 / 16;
 const idealCenterTop = 0.4;
 
 function computeImageProperties() {
   const { sprite } = props;
   const { naturalWidth, naturalHeight } = sprite.image;
-  const { clientWidth, clientHeight } = props.container;
+  const { clientHeight } = props.container;
 
-  const idealWidth = clientWidth * idealRatio;
-  const idealHeight = clientHeight * idealRatio;
-  const idealScale = Math.min(idealWidth / naturalWidth, idealHeight / naturalHeight);
+  const idealHeight = clientHeight * idealHeightRatio;
+  const idealWidth = idealHeight * idealWHRatio;
+  const idealScale = (props.framed
+    ? Math.max // object-fit: cover
+    : Math.min // object-fit: contain
+  )(idealWidth / naturalWidth, idealHeight / naturalHeight);
   const scale = idealScale * (sprite.scale > 0 ? sprite.scale : 1);
 
   const width = scale * naturalWidth;
   const height = scale * naturalHeight;
-
   const [centerX, centerY] = sprite.center;
-  const left = -scale * (centerX > 0 ? centerX : naturalWidth / 2);
-  const top = clientHeight * idealCenterTop - scale * (centerY > 0 ? centerY : naturalHeight / 2);
 
-  return [width, height, left, top];
+  if (!props.framed) {
+    const left = -scale * (centerX > 0 ? centerX : naturalWidth / 2);
+    const top = clientHeight * idealCenterTop - scale * (centerY > 0 ? centerY : naturalHeight / 2);
+
+    return [width, height, width, height, left, top, 0, 0, 'none'];
+  }
+  const boxLeft = -idealWidth / 2;
+  const boxTop = clientHeight * idealCenterTop - idealHeight / 2;
+  const left = idealWidth / 2 - scale * (centerX > 0 ? centerX : naturalWidth / 2);
+  const top = idealHeight / 2 - scale * (centerY > 0 ? centerY : naturalHeight / 2);
+  return [
+    idealWidth, idealHeight, width, height,
+    boxLeft, boxTop, left, top,
+    `polygon(${-left}px ${-top}px, ${idealWidth - left}px ${-top}px, \
+${idealWidth - left}px ${idealHeight - top}px, ${-left}px ${idealHeight - top}px)`,
+  ];
 }
 
-const [width, height, left, top] = computeImageProperties();
+const [
+  boxWidth, boxHeight, width, height,
+  boxLeft, boxTop, left, top, clipPath,
+] = computeImageProperties();
 </script>
 
 <template>
@@ -40,13 +59,21 @@ const [width, height, left, top] = computeImageProperties();
   >
     <div class="sprite-frame"
       :style="{
-        left: `${left}px`,
-        top: `${top}px`,
-        width: `${width}px`,
-        height: `${height}px`,
+        left: `${boxLeft}px`,
+        top: `${boxTop}px`,
+        width: `${boxWidth}px`,
+        height: `${boxHeight}px`,
       }"
     >
-      <img :src="sprite.image.src" />
+      <img :src="sprite.image.src"
+        :style="{
+          left: `${left}px`,
+          top: `${top}px`,
+          width: `${width}px`,
+          height: `${height}px`,
+          clipPath: clipPath as string,
+        }"
+      />
       <div class="frame-foreground" v-if="framed"></div>
       <div class="frame-background" v-if="framed"></div>
     </div>
@@ -69,8 +96,6 @@ const [width, height, left, top] = computeImageProperties();
 }
 .sprite .sprite-frame img {
   position: absolute;
-  width: 100%;
-  height: 100%;
 }
 .sprite .sprite-frame .frame-background {
   position: relative;

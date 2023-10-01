@@ -7,7 +7,7 @@ import {
   useNotification,
 } from 'naive-ui';
 import { ref, watch } from 'vue';
-import { AddFilled } from '@vicons/material';
+import { AddFilled, RemoveFilled } from '@vicons/material';
 
 import MediaSelector from '../media/MediaSelector.vue';
 import { getUniqueName, type Character } from '../../types/character';
@@ -101,7 +101,12 @@ function updateName(i: number) {
       </n-form-item>
       <n-form-item-row>
         <n-space vertical>
-          <n-space class="sprite-item" v-for="sprite, i in sprites" :key="sprite.name">
+          <n-space class="sprite-item" align="center"
+            v-for="sprite, i in sprites" :key="sprite.name"
+          >
+            <n-button @click="sprites.splice(i, 1) && names.splice(i, 1)">
+              <n-icon><remove-filled></remove-filled></n-icon>
+            </n-button>
             <n-form-item label="立绘名称">
               <n-input :value="names[i]" @update:value="(v) => names[i] = v"
                 @blur="updateName(i)"

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { NCascader, NSpace, type CascaderOption } from 'naive-ui';
+import {
+  NCascader, NCheckbox, NSpace, type CascaderOption,
+} from 'naive-ui';
 import { computed, h, ref } from 'vue';
 
 import MediaItem from '../media/MediaItem.vue';
@@ -11,6 +13,7 @@ import {
 
 const props = defineProps<{
   modelValue: string,
+  remoteRecord: Record<string, boolean>,
   characters: Character[],
 }>();
 const namePath = ref<readonly string[]>(props.modelValue.split('/'));
@@ -43,9 +46,15 @@ const emit = defineEmits<{
   (event: 'update:modelValue', modelValue: string): void,
 }>();
 
+const remote = ref(!!props.remoteRecord[props.modelValue]);
 function updateSelected(_v: never, _option: never, path: SpritePath) {
   namePath.value = getNamePath(path);
   emit('update:modelValue', namePath.value.join('/'));
+}
+function updateRemote(r: boolean) {
+  remote.value = r;
+  // eslint-disable-next-line vue/no-mutating-props
+  props.remoteRecord[namePath.value.join('/')] = r;
 }
 const url = computed(() => {
   if (namePath.value.length !== 2) {
@@ -71,5 +80,8 @@ const url = computed(() => {
       :render-label="renderLabel"
     >
     </n-cascader>
+    <n-checkbox :checked="remote" @update:checked="updateRemote">
+      电子外观
+    </n-checkbox>
   </n-space>
 </template>

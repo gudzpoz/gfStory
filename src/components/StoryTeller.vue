@@ -18,6 +18,7 @@ const narrator = ref('');
 const narratorColor = ref('');
 const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}">${narrator.value}</span>`);
 const sprites = ref<SpriteImage[]>([]);
+const remote = ref<Set<string>>(new Set<string>());
 const text = ref('');
 
 function nextLine() {
@@ -48,6 +49,10 @@ function nextLine() {
           .map((s) => s.trim().replace(/\\/g, ''))
           .map((s) => (s === '' ? null : story.getImage(s)))
           .filter((s) => s) as SpriteImage[];
+      }
+      if (line.tags.remote !== undefined) {
+        remote.value = new Set(line.tags.remote.split('|')
+          .map((s) => s.trim().replace(/\\/g, '')));
       }
       text.value = line.text;
       return;
@@ -91,6 +96,7 @@ onUnmounted(() => {
     :background-style="style"
     :narrator-html="narratorHtml"
     :sprites="sprites"
+    :remote="remote"
     :text-html="text"
     @click="nextLine"
   >
