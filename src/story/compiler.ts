@@ -1,14 +1,17 @@
 import { BrocatelCompiler } from '@brocatel/mdc';
 
-import { type Character } from '../types/character';
+import { type Character, type CharacterSprite } from '../types/character';
 import { type GfStory } from '../types/lines';
 import { db } from '../db/media';
+
+type CompactSprite = Omit<CharacterSprite, 'id'> & { id?: unknown };
+type CompactCharacter = Omit<Omit<Character, 'sprites'> & { sprites: CompactSprite[] }, 'id'>;
 
 function resolveBlobImage(s: string) {
   return db.toDataUrl(s);
 }
 
-function exportCharacters(characters: Character[]) {
+function exportCharacters(characters: CompactCharacter[]) {
   const json = JSON.stringify(characters);
   return `\`\`\`lua global
 print.defineCharacters(${JSON.stringify(json)})
@@ -25,10 +28,11 @@ print.preloadResources(${JSON.stringify(content)})
 
 export async function linesToMarkdown(story: GfStory, resolveImage = resolveBlobImage) {
   const preloaded: string[] = [];
-  const characters: Character[] = await Promise.all(story.characters.map(async (c) => ({
+  const characters: CompactCharacter[] = await Promise.all(story.characters.map(async (c) => ({
     name: c.name,
     sprites: await Promise.all(c.sprites.map(async (s) => {
-      const copy = { ...s };
+      const copy: CompactSprite = { ...s };
+      delete copy.id;
       copy.url = await resolveImage(copy.url);
       return copy;
     })),

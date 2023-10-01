@@ -34,6 +34,10 @@ function addCharacter() {
   const name = '角色';
   const unique = getUniqueName(name, characters.value, 0) ?? name;
   characters.value.push({
+    /*
+     * Unique ids are generated when editing is done for all.
+     */
+    id: '',
     name: unique,
     sprites: [],
   });

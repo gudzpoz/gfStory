@@ -10,11 +10,11 @@ import {
 } from '@vicons/material';
 
 import CharacterSelector from './CharacterSelector.vue';
-import type { CharacterWithId } from '../../types/character';
+import type { Character } from '../../types/character';
 
 const props = defineProps<{
   modelValue: string[],
-  characters: CharacterWithId[],
+  characters: Character[],
 }>();
 const selected = ref<string[]>(props.modelValue);
 

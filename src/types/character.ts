@@ -15,6 +15,10 @@ export interface CharacterSprite {
    * The scale.
    */
   scale: number;
+  /**
+   * The id.
+   */
+  id: string;
 }
 
 export interface Character {
@@ -26,6 +30,10 @@ export interface Character {
    * The sprites.
    */
   sprites: CharacterSprite[];
+  /**
+   * The id.
+   */
+  id: string;
 }
 
 function isUnique(name: string, objects: { name: string }[], limit: number) {
@@ -77,27 +85,18 @@ export function getSprite(path: NamePath, characters: Character[]) {
   return null;
 }
 
-export interface SpriteWithId extends CharacterSprite {
-  id: number;
-}
-
-export interface CharacterWithId extends Character {
-  id: number;
-  sprites: SpriteWithId[];
-}
-
-export function labelCharactersWithIds(characters: Character[]): CharacterWithId[] {
+export function labelCharactersWithIds(characters: Character[]): Character[] {
   let id = 0;
   return characters.map((c) => {
     id += 1;
     return {
-      id,
+      id: `${id}`,
       name: c.name,
       sprites: c.sprites.map((s) => {
         id += 1;
         return {
-          id,
           ...s,
+          id: `${id}`,
         };
       }),
     };

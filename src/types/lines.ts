@@ -31,7 +31,9 @@ export interface GfStory {
 
 let id = 0;
 export function initUniqueId(previous: GfStory) {
-  id = previous.lines.map((line) => parseInt(line.id, 10)).reduce((a, b) => Math.max(a, b));
+  if (previous.lines.length > 0) {
+    id = previous.lines.map((line) => parseInt(line.id, 10)).reduce((a, b) => Math.max(a, b));
+  }
 }
 export function nextId() {
   id += 1;

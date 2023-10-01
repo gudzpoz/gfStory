@@ -49,6 +49,14 @@ export class StoryInterpreter {
 
     js.push(this.L, () => {
       this.characters = JSON.parse(js.tojs(this.L, -1));
+      this.characters.forEach((character) => {
+        const c = character;
+        c.id = c.name;
+        c.sprites.forEach((sprite) => {
+          const s = sprite;
+          s.id = `${c.name}/${s.name}`;
+        });
+      });
     });
     lua.lua_setglobal(this.L, 'defineCharacters');
     js.push(this.L, () => {

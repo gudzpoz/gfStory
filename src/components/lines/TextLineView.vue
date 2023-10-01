@@ -7,12 +7,12 @@ import { inject, ref, type Ref } from 'vue';
 import CharacterListSelector from '../character/CharacterListSelector.vue';
 import ClassicEditor from './editor';
 import { type TextLine } from '../../types/lines';
-import type { CharacterWithId } from '../../types/character';
+import type { Character } from '../../types/character';
 
 const props = defineProps<{
   modelValue: TextLine,
 }>();
-const characters = inject<Ref<CharacterWithId[]>>('characters')!;
+const characters = inject<Ref<Character[]>>('characters')!;
 const narrators = inject<Ref<{ value: string }[]>>('narrators')!;
 
 const color = ref(props.modelValue.narratorColor);

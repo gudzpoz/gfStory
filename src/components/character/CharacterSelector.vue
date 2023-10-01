@@ -5,27 +5,27 @@ import { computed, h, ref } from 'vue';
 import MediaItem from '../media/MediaItem.vue';
 import {
   getNamePath, getSprite,
-  type CharacterWithId, type SpriteWithId,
+  type Character, type CharacterSprite,
   type NamePath, type SpritePath,
 } from '../../types/character';
 
 const props = defineProps<{
   modelValue: string,
-  characters: CharacterWithId[],
+  characters: Character[],
 }>();
 const namePath = ref<readonly string[]>(props.modelValue.split('/'));
 const id = computed(() => (getSprite(
   namePath.value as [string, string],
   props.characters,
-) as SpriteWithId)?.id);
+) as CharacterSprite)?.id);
 
 function renderLabel(o: CascaderOption) {
-  const option = o as unknown as CharacterWithId | SpriteWithId;
-  let sprite: SpriteWithId | undefined;
-  if ((option as SpriteWithId).url) {
-    sprite = option as SpriteWithId;
+  const option = o as unknown as Character | CharacterSprite;
+  let sprite: CharacterSprite | undefined;
+  if ((option as CharacterSprite).url) {
+    sprite = option as CharacterSprite;
   } else {
-    [sprite] = (option as CharacterWithId).sprites;
+    [sprite] = (option as Character).sprites;
   }
   if (!sprite) {
     return option.name;

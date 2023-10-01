@@ -68,6 +68,7 @@ async function updateStory(chunk?: string) {
     return;
   }
   background.value = '';
+  sprites.value = [];
   narrator.value = '';
   narratorColor.value = '';
   text.value = '';

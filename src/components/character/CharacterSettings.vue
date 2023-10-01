@@ -44,7 +44,11 @@ function addSprite() {
   const name = '立绘';
   const unique = getUniqueName(name, sprites.value, 0) ?? name;
   sprites.value.push({
+    /**
+     * Unique ids are generated after editing is done for all.
+     */
     name: unique,
+    id: '',
     url: '',
     center: [-1, -1],
     scale: -1,
