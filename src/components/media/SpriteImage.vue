@@ -19,10 +19,7 @@ function computeImageProperties() {
 
   const idealHeight = clientHeight * idealHeightRatio;
   const idealWidth = idealHeight * idealWHRatio;
-  const idealScale = (props.framed
-    ? Math.max // object-fit: cover
-    : Math.min // object-fit: contain
-  )(idealWidth / naturalWidth, idealHeight / naturalHeight);
+  const idealScale = idealHeight / naturalHeight;
   const scale = idealScale * (sprite.scale > 0 ? sprite.scale : 1);
 
   const width = scale * naturalWidth;

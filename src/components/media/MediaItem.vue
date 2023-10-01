@@ -7,8 +7,6 @@ import {
   CloseFilled, PlayArrowFilled, PauseFilled, QuestionMarkFilled,
 } from '@vicons/material';
 
-import 'vue-advanced-cropper/dist/style.css';
-
 import { db, type MediaUrl } from '../../db/media';
 
 const props = defineProps<{

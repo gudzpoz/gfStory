@@ -7,10 +7,15 @@ import {
   useNotification,
 } from 'naive-ui';
 import { ref, watch } from 'vue';
-import { AddFilled, RemoveFilled } from '@vicons/material';
+import { Cropper } from 'vue-advanced-cropper';
+import { AddFilled, CropFilled, RemoveFilled } from '@vicons/material';
 
 import MediaSelector from '../media/MediaSelector.vue';
-import { getUniqueName, type Character } from '../../types/character';
+import { getUniqueName, type Character, type CharacterSprite } from '../../types/character';
+import { db } from '../../db/media';
+
+import 'vue-advanced-cropper/dist/style.css';
+import 'vue-advanced-cropper/dist/theme.compact.css';
 
 const props = defineProps<{
   show: boolean,
@@ -85,10 +90,53 @@ function updateName(i: number) {
     content: `立绘出现重名，自动重命名为 ${unique}`,
   });
 }
+
+const showCropper = ref(false);
+const cropperImage = ref<CharacterSprite>();
+const cropperImageUrl = ref('');
+async function cropImage(sprite: CharacterSprite) {
+  const url = await db.toDataUrl(sprite.url);
+  if (!showCropper.value) {
+    cropperImage.value = sprite;
+    cropperImageUrl.value = url;
+    showCropper.value = true;
+  }
+}
+function cropCurrentImage(v: unknown) {
+  const sprite = cropperImage.value;
+  if (!sprite) {
+    return;
+  }
+  const {
+    width, height, left, top,
+  } = (
+    v as { coordinates: { [key: string]: number } }
+  ).coordinates;
+  sprite.center = [left + width / 2, top + height / 2];
+  sprite.scale = (v as { image: { height: number } }).image.height / height;
+}
 </script>
 
 <template>
   <!-- eslint-disable vue/no-mutating-props -->
+  <n-modal v-model:show="showCropper" preset="card" bordered
+  >
+    <cropper
+      :src="cropperImageUrl"
+      @change="cropCurrentImage"
+      :stencil-props="{
+        handlers: {},
+        movable: false,
+        resizable: false,
+      }"
+      :stencil-size="{
+        width: 220,
+        height: 320,
+      }"
+      image-restriction="stencil"
+    >
+    </cropper>
+  </n-modal>
   <n-modal :show="show" @update:show="(v) => emit('update:show', v)"
     preset="card" embedded bordered @close="makeNameUnique"
   >
@@ -121,6 +169,9 @@ function updateName(i: number) {
               >
               </media-selector>
             </n-form-item>
+            <n-button @click="cropImage(sprite)">
+              <n-icon><crop-filled></crop-filled></n-icon>
+            </n-button>
           </n-space>
         </n-space>
       </n-form-item-row>
@@ -138,5 +189,9 @@ function updateName(i: number) {
   border: 1px solid var(--n-border-color);
   border-radius: 3px;
   padding: 1em;
+}
+.n-card .vue-advanced-cropper {
+  height: 60vh;
+  overflow: hidden;
 }
 </style>
