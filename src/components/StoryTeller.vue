@@ -4,8 +4,7 @@ import {
 } from 'vue';
 
 import StoryScene from './StoryScene.vue';
-import { StoryInterpreter } from '../story/interpreter';
-import type { CharacterSprite } from '../types/character';
+import { StoryInterpreter, type SpriteImage } from '../story/interpreter';
 
 const props = defineProps<{
   chunk?: string,
@@ -14,11 +13,11 @@ const props = defineProps<{
 const story = new StoryInterpreter();
 let backgroundMusic: HTMLAudioElement | null = null;
 const background = ref('');
-const style = ref<'auto' | 'width'>('auto');
+const style = ref<'contain' | 'cover'>('cover');
 const narrator = ref('');
 const narratorColor = ref('');
 const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}">${narrator.value}</span>`);
-const sprites = ref<CharacterSprite[]>([]);
+const sprites = ref<SpriteImage[]>([]);
 const text = ref('');
 
 function nextLine() {
@@ -27,7 +26,7 @@ function nextLine() {
     if (line.tags.background !== undefined) {
       background.value = line.text.trim().replace(/\\/g, '');
       const display = line.tags.background.trim();
-      if (display === 'auto' || display === 'width') {
+      if (display === 'cover' || display === 'contain') {
         style.value = display;
       }
     } else if (line.tags.audio !== undefined) {
@@ -48,7 +47,7 @@ function nextLine() {
         sprites.value = line.tags.sprites.split('|')
           .map((s) => s.trim().replace(/\\/g, ''))
           .map((s) => (s === '' ? null : story.getImage(s)))
-          .filter((s) => s) as CharacterSprite[];
+          .filter((s) => s) as SpriteImage[];
       }
       text.value = line.text;
       return;

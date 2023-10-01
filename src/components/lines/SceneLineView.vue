@@ -29,8 +29,8 @@ if (!props.modelValue.scene) {
     </n-form-item>
     <n-form-item v-if="modelValue.scene === 'background'" label="显示方式" path="style">
       <n-radio-group :value="modelValue.style" @update:value="(v) => modelValue.style = v">
-        <n-radio-button value="width">匹配页面宽度</n-radio-button>
-        <n-radio-button value="auto">确保图片不大于页面</n-radio-button>
+        <n-radio-button value="cover">确保图片填满页面（可能无法完整显示图片）</n-radio-button>
+        <n-radio-button value="contain">确保图片完整显示（可能有黑边）</n-radio-button>
       </n-radio-group>
     </n-form-item>
     <n-form-item label="媒体文件" path="media">

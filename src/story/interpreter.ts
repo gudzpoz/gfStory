@@ -23,6 +23,10 @@ export interface StoryLine {
   };
 }
 
+export interface SpriteImage extends CharacterSprite {
+  image: HTMLImageElement;
+}
+
 export class StoryInterpreter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   L: any;
@@ -33,7 +37,7 @@ export class StoryInterpreter {
 
   resources: string[];
 
-  preloadedImages: Record<string, [HTMLImageElement, CharacterSprite]>;
+  preloadedImages: Record<string, SpriteImage>;
 
   constructor() {
     this.loaded = false;
@@ -84,18 +88,20 @@ export class StoryInterpreter {
     this.loaded = true;
   }
 
-  getImage(s: string): CharacterSprite {
-    return this.preloadedImages[s][1];
+  getImage(s: string): SpriteImage {
+    return this.preloadedImages[s];
   }
 
   async preloadResources() {
     this.preloadedImages = {};
     const images = this.characters.flatMap((c) => c.sprites.map((s) => {
       const image = new Image();
-      return new Promise<[string, [HTMLImageElement, CharacterSprite]]>((resolve, reject) => {
+      return new Promise<[string, SpriteImage]>((resolve, reject) => {
         image.src = s.url;
+        const sprite = s as SpriteImage;
+        sprite.image = image;
         image.onload = () => resolve(
-          [`${c.name}/${s.name}`, [image, s] as [HTMLImageElement, CharacterSprite]],
+          [`${c.name}/${s.name}`, sprite],
         );
         image.onerror = reject;
       });
