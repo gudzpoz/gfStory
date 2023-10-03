@@ -1,6 +1,7 @@
 import json
 import logging
 import dataclasses
+import pathlib
 import typing
 
 from gfunpack.characters import CharacterCollection
@@ -12,9 +13,9 @@ _warning = _logger.warning
 
 @dataclasses.dataclass
 class SpriteDetails:
-    path: str
-    scale: float
-    offset: tuple[float, float]
+    path: pathlib.Path
+    scale: float = -1.0
+    offset: tuple[float, float] = (0.0, 0.0)
 
 
 class Mapper:
@@ -24,6 +25,8 @@ class Mapper:
 
     mapped: dict[str, dict[int, dict]]
 
+    mapped_lowercase: dict[str, str]
+
     unmapped: dict[str, dict[int, dict]]
 
     remaining: dict[str, list[str]]
@@ -32,6 +35,7 @@ class Mapper:
         self.prefabs = prefabs
         self.characters = characters
         self.mapped = {}
+        self.mapped_lowercase = {}
         self.unmapped = {}
         self.remaining = {}
         self.map_sprite_path_ids()
@@ -46,7 +50,11 @@ class Mapper:
     def _add_mapped(self, name: str, i: int, d: SpriteDetails | DialoguePicDetails, mapped: bool):
         dest = self.mapped if mapped else self.unmapped
         asdict = dataclasses.asdict(d)
-        if not mapped:
+        if mapped:
+            self.mapped_lowercase[name.lower()] = name
+            sprite_details = typing.cast(SpriteDetails, d)
+            asdict['path'] = str(sprite_details.path.relative_to(self.characters.destination))
+        else:
             pic_details = typing.cast(DialoguePicDetails, d)
             path_id = pic_details.path_id
             if path_id != 0:
@@ -75,20 +83,38 @@ class Mapper:
                     if len(matched) == 0:
                         self._add_mapped(name, i, detail, False)
                         continue
-                    path = str(matched[0].absolute())
+                    path = matched[0].absolute()
                     assert len(matched) == 1
                 self._add_mapped(name, i, SpriteDetails(path, detail.scale, detail.offset), True)
-                mapped_paths.append(path)
+                mapped_paths.append(str(path))
         
-        extracted = set(str(path.resolve()) for path in self.characters.destination.glob('**/*.png'))
+        extracted = set(str(path.resolve()) for path in self.characters.destination.glob('*/*.png'))
+        # TODO: On Windows, path separators are "\\"
         remaining: list[tuple[str, str]] = sorted(
             typing.cast(tuple[str, str], tuple(path.rsplit('/', 2)[-2:]))
             for path in (extracted - set(mapped_paths))
         )
+        remaining = self._classify_remaining(remaining)
         for directory, file in remaining:
             if directory not in self.remaining:
                 self.remaining[directory] = []
             self.remaining[directory].append(file)
+
+    def _classify_remaining(self, remaining: list[tuple[str, str]]):
+        for character, filename in remaining:
+            name = self.mapped_lowercase.get(character.lower())
+            if name is None:
+                name = self.mapped_lowercase.get(character.split('_')[0])
+            if name is None:
+                name = character.split('_')[0]
+            d = self.mapped.get(name)
+            self._add_mapped(
+                name,
+                0 if d is None else -len(d),
+                SpriteDetails(self.characters.destination.joinpath(character, filename)),
+                True,
+            )
+        return []
 
     def write_indices(self):
         for name in ['mapped', 'unmapped', 'remaining']:

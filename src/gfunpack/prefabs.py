@@ -35,7 +35,7 @@ class Prefabs:
 
     details: dict[str, list[DialoguePicDetails]]
 
-    all_path_id_index: dict[int, str]
+    all_path_id_index: dict[int, pathlib.Path]
 
     def __init__(self, directory: str, destination: str) -> None:
         self.directory = utils.check_directory(directory)
@@ -56,7 +56,7 @@ class Prefabs:
                     file = self.destination.joinpath(f'{obj.path_id}.png').absolute()
                     data = typing.cast(Sprite, obj.read())
                     data.image.save(file)
-                    self.all_path_id_index[obj.path_id] = str(file)
+                    self.all_path_id_index[obj.path_id] = file
                     continue
                 if obj.type.name != 'MonoBehaviour':
                     continue

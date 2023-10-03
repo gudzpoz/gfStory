@@ -58,13 +58,13 @@ class CharacterCollection:
 
     resource_files: list[pathlib.Path]
 
-    path_id_index: dict[int, str]
+    path_id_index: dict[int, pathlib.Path]
 
-    invalid_path_id_index: dict[int, tuple[str, str]]
+    invalid_path_id_index: dict[int, tuple[pathlib.Path, str]]
 
-    all_path_id_index: dict[int, str]
+    all_path_id_index: dict[int, pathlib.Path]
 
-    character_index: dict[str, list[str]]
+    character_index: dict[str, list[pathlib.Path]]
 
     hd: bool
 
@@ -130,11 +130,11 @@ class CharacterCollection:
             match = _character_container_regex.match(obj.container)
             if match is None:
                 match = _character_npc_regex.match(obj.container)
-                if match is None:
-                    match = _character_fairy_regex.match(obj.container)
-                    if match is None:
-                        self._add_invalid(obj, 'container fails regex match')
-                        continue
+            if match is None:
+                match = _character_fairy_regex.match(obj.container)
+            if match is None:
+                self._add_invalid(obj, 'container fails regex match')
+                continue
             matched = match.group(1)
 
             if character is None:
@@ -213,7 +213,7 @@ class CharacterCollection:
     def _save_sprite(self, directory: pathlib.Path, name: str, pic: list[Sprite | Texture2D]):
         image_path = directory.joinpath(f'{name}.png').resolve()
         if not self.force and image_path.exists():
-            return str(image_path)
+            return image_path
         sprite = _get_pic_of_type(pic, 'Sprite')
         sprite.image.save(image_path)
         # pngquant to minimize the image
@@ -221,12 +221,12 @@ class CharacterCollection:
             quant_path = directory.joinpath(f'{name}.fs8.png')
             subprocess.run(['pngquant', image_path, '--ext', '.fs8.png', '--strip']).check_returncode()
             os.replace(quant_path, image_path)
-        return str(image_path)
+        return image_path
 
-    def _merge_alpha_channel(self, directory: pathlib.Path, name: str, sprite: Texture2D, alpha_sprite: Texture2D) -> str:
+    def _merge_alpha_channel(self, directory: pathlib.Path, name: str, sprite: Texture2D, alpha_sprite: Texture2D) -> pathlib.Path:
         image_path = directory.joinpath(f'{name}.png').resolve()
         if not self.force and image_path.exists():
-            return str(image_path)
+            return image_path
         sprite_path = directory.joinpath(f'{name}.sprite.png')
         alpha_path = directory.joinpath(f'{name}.alpha.png')
         alpha_dims_path = directory.joinpath(f'{name}.dims.png')
@@ -264,7 +264,7 @@ class CharacterCollection:
             quant_path = directory.joinpath(f'{name}.fs8.png')
             subprocess.run(['pngquant', image_path, '--ext', '.fs8.png', '--strip']).check_returncode()
             os.replace(quant_path, image_path)
-        return str(image_path)
+        return image_path
 
     def load_files(self):
         for path in (bar := tqdm.tqdm(self.resource_files)):
