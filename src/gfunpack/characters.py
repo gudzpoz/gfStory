@@ -155,6 +155,8 @@ class CharacterCollection:
             path_id = _get_sprite_path_id(pic)
             assert path_id not in self.path_id_index
             self.path_id_index[path_id] = file
+        else:
+            _warning('sprite with path_id not found for %s (%s)', character, name)
         if character not in self.character_index:
             self.character_index[character] = []
         self.character_index[character].append(file)
@@ -163,7 +165,7 @@ class CharacterCollection:
     def _merge_alpha_channel(self, character: str, name: str, sprite: Texture2D, alpha_sprite: Texture2D) -> str:
         directory = self.destination.joinpath(character)
         os.makedirs(directory, exist_ok=True)
-        image_path = directory.joinpath(f'{name}.png')
+        image_path = directory.joinpath(f'{name}.png').resolve()
         if not self.force and image_path.exists():
             return str(image_path)
         sprite_path = directory.joinpath(f'{name}.sprite.png')

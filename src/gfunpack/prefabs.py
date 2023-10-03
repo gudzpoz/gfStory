@@ -89,6 +89,8 @@ class Prefabs:
                 offset = (0.0, 0.0)
             else:
                 offset = (avg_offset.x, avg_offset.y)
+            if p is None:
+                _warning('%s (%d) no path_id available', name, i)
             details.append(DialoguePicDetails(
                 name=name,
                 path_id=p.path_id if p is not None else 0,
