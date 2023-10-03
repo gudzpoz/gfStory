@@ -1,0 +1,23 @@
+[project]
+name = "gfUnpack"
+version = "0.1.0"
+description = "Unpacks character sprites from gf as well as their path id indices."
+authors = [
+    {name = "gudzpoz", email = "gudzpoz@live.com"},
+]
+dependencies = [
+    "UnityPy>=1.10.3",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=7.4.2",
+    "notebook>=7.0.4",
+]
