@@ -9,6 +9,7 @@ import typing
 import tqdm
 import UnityPy
 from UnityPy.classes import Sprite, Texture2D
+from UnityPy.files import ObjectReader
 
 from gfunpack import utils
 
@@ -18,6 +19,7 @@ _warning = _logger.warning
 _character_file_regex = re.compile('^.+character(.*)\\.ab$')
 _character_container_regex = re.compile('^assets/characters/([^/]+)/pic(?:_he)?/([^/]+)\\.png$')
 _character_npc_regex = re.compile('^assets/characters/([^/]+)/([^/]+)\\.png$')
+_variation_name_regex = re.compile('_\\d+$')
 
 
 def _get_pic_of_type(pics: list[Sprite | Texture2D], t: typing.Literal['Sprite'] | typing.Literal['Texture2D']) -> (Sprite | Texture2D):
@@ -57,6 +59,8 @@ class CharacterCollection:
 
     path_id_index: dict[int, str]
 
+    invalid_path_id_index: dict[int, tuple[str, str]]
+
     character_index: dict[str, list[str]]
 
     hd: bool
@@ -65,18 +69,22 @@ class CharacterCollection:
 
     force: bool
 
-    _concurrency: threading.Semaphore
+    concurrency: int
+
+    _semaphore: threading.Semaphore
 
     def __init__(self, directory: str, destination: str,
                  hd: bool = False, pngquant: bool = False, force: bool = False, concurrency = 8) -> None:
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(destination, create=True)
         self.path_id_index = {}
+        self.invalid_path_id_index = {}
         self.character_index = {}
         self.hd = hd
         self.pngquant = pngquant
         self.force = force
-        self._concurrency = threading.Semaphore(concurrency)
+        self.concurrency = concurrency
+        self._semaphore = threading.Semaphore(concurrency)
         self.resource_files = [path for path in self.directory.glob('*character*.ab') if 'spine' not in str(path)]
         self._test_commands()
         self.load_files()
@@ -90,7 +98,22 @@ class CharacterCollection:
         except FileNotFoundError as e:
             raise FileNotFoundError('imagemagick is required to merge alpha layers, pngquant is optional', e)
 
-    def _process(self, bundle: UnityPy.Environment, group: str):
+    @classmethod
+    def _try_alpha_names(cls, name: str, pics: dict[str, list[Sprite | Texture2D]]):
+        alpha = pics.get(f'{name}_alpha')
+        if alpha is not None:
+            return alpha
+        match = re.search(_variation_name_regex, name)
+        if match is None:
+            return None
+        # e.g. pic_cbjms_3503_3 -> pic_cbjms_3503_alpha
+        return pics.get(f'{name[:match.span()[0]]}_alpha')
+
+    def _add_invalid(self, obj: ObjectReader | Sprite | Texture2D, reason: str):
+        if obj.type.name == 'Sprite':
+            self.invalid_path_id_index[obj.path_id] = (obj.container, reason)
+
+    def _extract_pics(self, bundle: UnityPy.Environment, group: str):
         character: str | None = None
         pics: dict[str, list[Sprite | Texture2D]] = {}
         for obj in bundle.objects:
@@ -101,6 +124,7 @@ class CharacterCollection:
             if match is None:
                 match = _character_npc_regex.match(obj.container)
                 if match is None:
+                    self._add_invalid(obj, 'container fails regex match')
                     continue
             matched = match.group(1)
 
@@ -115,6 +139,7 @@ class CharacterCollection:
 
             name = match.group(2).lower()
             if not self.hd and (name.endswith('_hd') or name.endswith('_hd_alpha')):
+                self._add_invalid(obj, 'hd')
                 continue
             typed = typing.cast(Sprite | Texture2D, obj.read())
             pic = pics.get(name)
@@ -132,25 +157,39 @@ class CharacterCollection:
             any(sp in c for sp in _special_characters) for c in bundle.container.keys()
         ), bundle.container
 
+        return character, pics
+
+    def _process(self, bundle: UnityPy.Environment, group: str):
+        character, pics = self._extract_pics(bundle, group)
+
         for name, pic in pics.items():
             assert len(pic) == 2 or (len(pic) == 1 and pic[0].type.name == 'Texture2D'), f'{name} {pic} {pics}'
-            alpha_pic = pics.get(f'{name}_alpha')
+            alpha_pic = self._try_alpha_names(name, pics)
             if alpha_pic is None:
-                continue
-            self._concurrency.acquire()
+                if name.endswith('_alpha'):
+                    continue
+                _warning('alpha resource for %s not found', name)
+                if len(pic) == 1:
+                    continue
+                alpha_pic = []
+            self._semaphore.acquire()
             threading.Thread(target=self._merge_image, args=(character, name, pic, alpha_pic)).start()
-            self._concurrency.release()
-    
+
     def _merge_image(self, character: str, name: str, pic: list[Sprite | Texture2D], alpha_pic: list[Sprite | Texture2D]):
         if character is None or character == '':
             character = 'default'
-        self._concurrency.acquire()
-        file = self._merge_alpha_channel(
-            character,
-            name,
-            _get_texture(pic),
-            _get_texture(alpha_pic),
-        )
+        directory = self.destination.joinpath(character)
+        os.makedirs(directory, exist_ok=True)
+        if len(alpha_pic) == 0:
+            file = self._save_sprite(directory, name, pic)
+        else:
+            file = self._merge_alpha_channel(
+                directory,
+                name,
+                _get_texture(pic),
+                _get_texture(alpha_pic),
+            )
+
         if len(pic) == 2:
             path_id = _get_sprite_path_id(pic)
             assert path_id not in self.path_id_index
@@ -160,11 +199,22 @@ class CharacterCollection:
         if character not in self.character_index:
             self.character_index[character] = []
         self.character_index[character].append(file)
-        self._concurrency.release()
+        self._semaphore.release()
 
-    def _merge_alpha_channel(self, character: str, name: str, sprite: Texture2D, alpha_sprite: Texture2D) -> str:
-        directory = self.destination.joinpath(character)
-        os.makedirs(directory, exist_ok=True)
+    def _save_sprite(self, directory: pathlib.Path, name: str, pic: list[Sprite | Texture2D]):
+        image_path = directory.joinpath(f'{name}.png').resolve()
+        if not self.force and image_path.exists():
+            return str(image_path)
+        sprite = _get_pic_of_type(pic, 'Sprite')
+        sprite.image.save(image_path)
+        # pngquant to minimize the image
+        if self.pngquant:
+            quant_path = directory.joinpath(f'{name}.fs8.png')
+            subprocess.run(['pngquant', image_path, '--ext', '.fs8.png', '--strip']).check_returncode()
+            os.replace(quant_path, image_path)
+        return str(image_path)
+
+    def _merge_alpha_channel(self, directory: pathlib.Path, name: str, sprite: Texture2D, alpha_sprite: Texture2D) -> str:
         image_path = directory.joinpath(f'{name}.png').resolve()
         if not self.force and image_path.exists():
             return str(image_path)
@@ -221,3 +271,7 @@ class CharacterCollection:
 
             bundle = UnityPy.load(file)
             self._process(bundle, group)
+        for _ in range(self.concurrency):
+            self._semaphore.acquire()
+        for _ in range(self.concurrency):
+            self._semaphore.release()

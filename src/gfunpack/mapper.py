@@ -42,6 +42,10 @@ class Mapper:
     
     def _add_mapped(self, name: str, i: int, d: dict, mapped: bool):
         dest = self.mapped if mapped else self.unmapped
+        if not mapped:
+            path_id = d['path_id']
+            if path_id != 0 and path_id in self.characters.invalid_path_id_index:
+                d['candidate'] = self.characters.invalid_path_id_index[path_id]
         if name not in dest:
             dest[name] = {}
         dest[name][i] = d
