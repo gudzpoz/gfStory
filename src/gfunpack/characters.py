@@ -19,6 +19,7 @@ _warning = _logger.warning
 _character_file_regex = re.compile('^.+character(.*)\\.ab$')
 _character_container_regex = re.compile('^assets/characters/([^/]+)/pic(?:_he)?/([^/]+)\\.png$')
 _character_npc_regex = re.compile('^assets/characters/([^/]+)/([^/]+)\\.png$')
+_character_fairy_regex = re.compile('^assets/resources/dabao/pics/(fairy)/([^/]+)\\.png')
 _variation_name_regex = re.compile('_\\d+$')
 
 
@@ -61,6 +62,8 @@ class CharacterCollection:
 
     invalid_path_id_index: dict[int, tuple[str, str]]
 
+    all_path_id_index: dict[int, str]
+
     character_index: dict[str, list[str]]
 
     hd: bool
@@ -79,13 +82,16 @@ class CharacterCollection:
         self.destination = utils.check_directory(destination, create=True)
         self.path_id_index = {}
         self.invalid_path_id_index = {}
+        self.all_path_id_index = {}
         self.character_index = {}
         self.hd = hd
         self.pngquant = pngquant
         self.force = force
         self.concurrency = concurrency
         self._semaphore = threading.Semaphore(concurrency)
-        self.resource_files = [path for path in self.directory.glob('*character*.ab') if 'spine' not in str(path)]
+        self.resource_files = []
+        self.resource_files.extend(self.directory.glob('*resourcefairy.ab'))
+        self.resource_files.extend(path for path in self.directory.glob('*character*.ab') if 'spine' not in str(path))
         self._test_commands()
         self.load_files()
 
@@ -119,13 +125,16 @@ class CharacterCollection:
         for obj in bundle.objects:
             if obj.type.name != 'Sprite' and obj.type.name != 'Texture2D':
                 continue
+            self.all_path_id_index[obj.path_id] = obj.container
             assert obj.container, f'{group} {obj.container}'
             match = _character_container_regex.match(obj.container)
             if match is None:
                 match = _character_npc_regex.match(obj.container)
                 if match is None:
-                    self._add_invalid(obj, 'container fails regex match')
-                    continue
+                    match = _character_fairy_regex.match(obj.container)
+                    if match is None:
+                        self._add_invalid(obj, 'container fails regex match')
+                        continue
             matched = match.group(1)
 
             if character is None:
@@ -149,7 +158,7 @@ class CharacterCollection:
             else:
                 pics[name] = [typed]
 
-        if group in ['boss']:
+        if group in ['boss', 'fairy']:
             character = group
 
         assert character is not None or any(
@@ -262,9 +271,12 @@ class CharacterCollection:
             file = str(path)
             if 'atlasclips' in file:
                 continue
-            match = _character_file_regex.match(file)
-            assert match, file
-            group = match.group(1)
+            if file.endswith('resourcefairy.ab'):
+                group = 'fairy'
+            else:
+                match = _character_file_regex.match(file)
+                assert match, file
+                group = match.group(1)
             if group in _special_files:
                 continue
             bar.set_description(group)
