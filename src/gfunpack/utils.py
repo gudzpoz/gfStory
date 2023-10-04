@@ -13,7 +13,7 @@ def check_directory(directory: pathlib.Path | str, create: bool = False) -> path
         os.makedirs(d)
     if not d.exists() or not d.is_dir():
         raise ValueError(f'{d} is not a valid directory')
-    return d.absolute()
+    return d.resolve()
 
 
 def test_pngquant(use_pngquant: bool):
