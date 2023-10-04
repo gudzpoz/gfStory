@@ -3,11 +3,20 @@ import {
   computed, onUnmounted, ref, watch,
 } from 'vue';
 
+import { MenuFilled } from '@vicons/material';
+
 import StoryScene from './StoryScene.vue';
 import { StoryInterpreter, type SpriteImage } from '../story/interpreter';
 
 const props = defineProps<{
   chunk?: string,
+
+  menuButton?: boolean,
+}>();
+
+// eslint-disable-next-line no-spaced-func
+const emit = defineEmits<{
+  (event: 'menu'): void,
 }>();
 
 const story = new StoryInterpreter();
@@ -100,5 +109,8 @@ onUnmounted(() => {
     :text-html="text"
     @click="nextLine"
   >
+    <button v-if="menuButton" @click="emit('menu')">
+      <menu-filled></menu-filled><span>菜单</span>
+    </button>
   </story-scene>
 </template>

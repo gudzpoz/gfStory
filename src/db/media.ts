@@ -84,6 +84,9 @@ export class MediaDatabase extends Dexie {
   }
 
   async toDataUrl(s: MediaUrl) {
+    if (s.startsWith('/') || !s.includes(':')) {
+      return s;
+    }
     const [t, name] = this.splitMediaUrl(s);
     const type = t as typeof MEDIA_TYPES[number];
     if (this.cache[type][name]) {

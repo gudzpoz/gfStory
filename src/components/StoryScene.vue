@@ -57,6 +57,9 @@ function computeCenter(i: number) {
 
 <template>
   <div class="story-background">
+    <div class="button-slot">
+      <slot></slot>
+    </div>
     <img v-show="backgroundUrl"
       :src="backgroundUrl"
       :style="{ objectFit: backgroundStyle }"
@@ -99,6 +102,45 @@ function computeCenter(i: number) {
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.story-background .button-slot {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-content: center;
+  z-index: 3;
+  margin: 0.5em 1.2em 0.5em 1.2em;
+}
+.story-background .button-slot button {
+  color: white;
+  background-color: #0000;
+  border: 1px solid #fff8;
+  border-radius: 3px;
+  width: 45px;
+  height: 45px;
+  position: relative;
+  filter: drop-shadow(1px 1px 1px #fff8);
+}
+.story-background .button-slot button:hover {
+  box-shadow: 0 0 3px white;
+}
+.story-background .button-slot button:active {
+  box-shadow: 0 0 3px white inset;
+}
+.story-background .button-slot button > svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+}
+.story-background .button-slot button > span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding-right: 3px;
 }
 
 .story-background > img {

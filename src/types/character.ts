@@ -34,6 +34,10 @@ export interface Character {
    * The id.
    */
   id: string;
+  /**
+   * Readonly.
+   */
+  imported: boolean;
 }
 
 function isUnique(name: string, objects: { name: string }[], limit: number) {
@@ -92,6 +96,7 @@ export function labelCharactersWithIds(characters: Character[]): Character[] {
     return {
       id: `${id}`,
       name: c.name,
+      imported: false,
       sprites: c.sprites.map((s) => {
         id += 1;
         return {

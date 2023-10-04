@@ -5,7 +5,7 @@ import { type GfStory } from '../types/lines';
 import { db } from '../db/media';
 
 type CompactSprite = Omit<CharacterSprite, 'id'> & { id?: unknown };
-type CompactCharacter = Omit<Omit<Character, 'sprites'> & { sprites: CompactSprite[] }, 'id'>;
+type CompactCharacter = Omit<Omit<Omit<Character, 'sprites'>, 'imported'> & { sprites: CompactSprite[] }, 'id'>;
 
 function resolveBlobImage(s: string) {
   return db.toDataUrl(s);

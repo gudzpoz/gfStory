@@ -53,6 +53,11 @@ async function exportStory() {
     throw new Error('zip error');
   }
   const compiled = await compileMarkdown(await linesToMarkdown(story, async (s) => {
+    if (!s.includes(':')) {
+      const url = new URL(window.location.toString());
+      url.pathname = s;
+      return url.toString();
+    }
     const [type, name] = s.split(':', 2);
     const directory = zip.folder(type);
     if (!directory) {
