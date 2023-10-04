@@ -67,7 +67,7 @@ class Mapper:
         dest[name][i] = asdict
 
     def map_sprite_path_ids(self):
-        mapped_paths: list[str] = []
+        mapped_paths: list[pathlib.Path] = []
         for name, details in self.prefabs.details.items():
             for i, detail in enumerate(details):
                 path = None if detail.path_id == 0 else self._map_pic(detail)
@@ -83,15 +83,14 @@ class Mapper:
                     if len(matched) == 0:
                         self._add_mapped(name, i, detail, False)
                         continue
-                    path = matched[0].absolute()
+                    path = matched[0].resolve()
                     assert len(matched) == 1
                 self._add_mapped(name, i, SpriteDetails(path, detail.scale, detail.offset), True)
-                mapped_paths.append(str(path))
+                mapped_paths.append(path)
         
-        extracted = set(str(path.resolve()) for path in self.characters.destination.glob('*/*.png'))
-        # TODO: On Windows, path separators are "\\"
+        extracted = set(path.resolve() for path in self.characters.destination.glob('*/*.png'))
         remaining: list[tuple[str, str]] = sorted(
-            typing.cast(tuple[str, str], tuple(path.rsplit('/', 2)[-2:]))
+            typing.cast(tuple[str, str], tuple(path.parts[-2:]))
             for path in (extracted - set(mapped_paths))
         )
         remaining = self._classify_remaining(remaining)
