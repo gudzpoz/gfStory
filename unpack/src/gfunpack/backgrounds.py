@@ -75,7 +75,7 @@ class BackgroundCollection:
         for file in tqdm.tqdm(self.resource_files):
             files: dict[str, Sprite | Texture2D] = {}
             asset = UnityPy.load(str(file))
-            for o in asset.objects:
+            for o in tqdm.tqdm(asset.objects, leave=False):
                 if o.container is None:
                     continue
                 if o.type.name != 'Sprite' and o.type.name != 'Texture2D':

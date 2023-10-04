@@ -21,6 +21,9 @@ jobs:
           tar -zxf vgmstream-linux-cli.tar.gz
           mkdir bin
           mv vgmstream-cli bin
+          wget https://imagemagick.org/archive/binaries/magick
+          mv magick bin
+          chmod a+x bin/*
           echo "${PWD}/bin" >> $GITHUB_PATH
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v3

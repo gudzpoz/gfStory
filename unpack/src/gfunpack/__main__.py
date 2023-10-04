@@ -16,9 +16,6 @@ cpus = os.cpu_count() or 2
 downloaded = args.dir
 destination = pathlib.Path(args.output)
 
-bgm = audio.BGM(downloaded, str(destination.joinpath('audio')), concurrency=cpus, clean=not args.no_clean)
-bgm.save()
-
 images = destination.joinpath('images')
 bg = backgrounds.BackgroundCollection(downloaded, str(images), pngquant=True, concurrency=cpus)
 bg.save()
@@ -28,3 +25,6 @@ character_mapper = mapper.Mapper(
   characters.CharacterCollection(downloaded, str(images), pngquant=True, concurrency=cpus),
 )
 character_mapper.write_indices()
+
+bgm = audio.BGM(downloaded, str(destination.joinpath('audio')), concurrency=cpus, clean=not args.no_clean)
+bgm.save()
