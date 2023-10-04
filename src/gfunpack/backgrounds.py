@@ -48,14 +48,7 @@ class BackgroundCollection:
         self.extracted = self.extract()
 
     def _extract_bg_profiles(self) -> list[str]:
-        asset = UnityPy.load(str(self.profile_asset))
-        profile_reader = [o for o in asset.objects if o.container == 'assets/resources/dabao/avgtxt/profiles.txt'][0]
-        assert profile_reader.type.name == 'TextAsset'
-        profile = typing.cast(
-            TextAsset,
-            profile_reader.read()
-        )
-        content: str = profile.m_Script.tobytes().decode()
+        content = utils.read_text_asset(self.profile_asset, 'assets/resources/dabao/avgtxt/profiles.txt')
         return [l.strip() for l in content.split('\n')]
 
     def _save_image(self, extracted: dict[str, pathlib.Path], name: str, image: Sprite | Texture2D):
@@ -120,7 +113,7 @@ class BackgroundCollection:
 
     def save(self):
         s = json.dumps(
-            dict((k, "" if v is None else str(v.relative_to(self.destination))) for k, v in self.extracted.items()),
+            dict((k, "" if v is None else str(v.relative_to(self.destination.parent))) for k, v in self.extracted.items()),
             ensure_ascii=False,
             indent=2,
         )
