@@ -177,5 +177,7 @@ class BGM:
         return mapping
 
     def save(self):
-        with self.destination.parent.joinpath('audio.json').open('w') as f:
-            f.write(json.dumps(self.extracted, indent=2))
+        path = self.destination.parent.joinpath('audio.json')
+        with path.open('w') as f:
+            f.write(json.dumps(dict((k, str(v)) for k, v in self.extracted.items()), indent=2))
+        return path

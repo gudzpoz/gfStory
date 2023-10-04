@@ -163,7 +163,8 @@ cython_debug/
 
 # gf
 output/
-pics/
+bin/
+images/
 audio/
 gf-resource-downloader/
 *.ipynb

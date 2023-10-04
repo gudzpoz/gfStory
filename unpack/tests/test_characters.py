@@ -2,7 +2,7 @@ from gfunpack import characters
 
 
 def test_characters():
-    characters.CharacterCollection('output', 'pics', pngquant=True)
+    characters.CharacterCollection('downloader/output', 'images', pngquant=True)
 
 
 if __name__ == '__main__':

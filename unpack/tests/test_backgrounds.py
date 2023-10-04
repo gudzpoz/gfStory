@@ -2,7 +2,7 @@ from gfunpack import backgrounds
 
 
 def test_backgrounds():
-    bg = backgrounds.BackgroundCollection('output', 'pics', pngquant=True)
+    bg = backgrounds.BackgroundCollection('downloader/output', 'images', pngquant=True)
     bg.save()
 
 

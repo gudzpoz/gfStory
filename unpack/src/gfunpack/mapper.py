@@ -118,5 +118,8 @@ class Mapper:
     def write_indices(self):
         for name in ['mapped', 'unmapped', 'remaining']:
             data = getattr(self, name)
-            with open(self.characters.destination.joinpath(f'{name}.json'), 'w') as f:
+            path = self.characters.destination.joinpath(f'{name}.json')
+            with open(path, 'w') as f:
                 f.write(json.dumps(data, indent=2))
+            if name == 'mapped':
+                path.rename(self.characters.destination.joinpath('characters.json'))
