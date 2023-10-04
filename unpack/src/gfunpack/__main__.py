@@ -8,6 +8,7 @@ from gfunpack import audio, backgrounds, characters, mapper, prefabs
 parser = argparse.ArgumentParser()
 parser.add_argument('dir')
 parser.add_argument('-o', '--output', required=True)
+parser.add_argument('--no-clean', action='store_true')
 args = parser.parse_args()
 
 cpus = os.cpu_count() or 2
@@ -15,7 +16,7 @@ cpus = os.cpu_count() or 2
 downloaded = args.dir
 destination = pathlib.Path(args.output)
 
-bgm = audio.BGM(downloaded, str(destination.joinpath('audio')), concurrency=cpus)
+bgm = audio.BGM(downloaded, str(destination.joinpath('audio')), concurrency=cpus, clean=not args.no_clean)
 bgm.save()
 
 images = destination.joinpath('images')

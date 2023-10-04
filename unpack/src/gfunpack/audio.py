@@ -44,11 +44,11 @@ def _test_ffmpeg():
         raise FileNotFoundError('ffmpeg is required to transcode audio files')
     
 
-def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int):
+def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int, clean: bool):
     _test_ffmpeg()
     semaphore = threading.Semaphore(concurrency)
     def transcode(file: pathlib.Path, output: pathlib.Path):
-        nonlocal force, semaphore
+        nonlocal clean, force, semaphore
         if force or not output.is_file():
             subprocess.run([
                 'ffmpeg',
@@ -59,6 +59,8 @@ def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int):
                 file,
                 output,
             ]).check_returncode()
+        if clean:
+            file.unlink()
         semaphore.release()
 
     converted: dict[str, pathlib.Path] = {}
@@ -73,8 +75,11 @@ def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int):
     return converted
 
 
-def _extract_acb_to_wav(dat: pathlib.Path, destination: pathlib.Path, semaphore: threading.Semaphore | None = None):
-    acb_audios = _extract_zip(dat, destination)
+def _extract_acb_to_wav(dat: pathlib.Path, destination: pathlib.Path,
+                        semaphore: threading.Semaphore | None = None,
+                        force: bool = False,
+                        clean: bool = True):
+    acb_audios = _extract_zip(dat, destination, force=force)
     assert len(acb_audios) <= 1
     if len(acb_audios) == 1:
         acb = acb_audios[0]
@@ -88,6 +93,8 @@ def _extract_acb_to_wav(dat: pathlib.Path, destination: pathlib.Path, semaphore:
             '-S',
             '0',
         ]).check_returncode()
+        if clean:
+            acb.unlink()
     else:
         acb = None
     if semaphore is not None:
@@ -112,22 +119,29 @@ class BGM:
 
     concurrency: int
 
-    def __init__(self, directory: str, destination: str, force: bool = False, concurrency: int = 8) -> None:
+    clean: bool
+
+    def __init__(self, directory: str, destination: str,
+                 force: bool = False, concurrency: int = 8, clean: bool = True) -> None:
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(pathlib.Path(destination).joinpath('bgm'), create=True)
         self.se_destination = utils.check_directory(pathlib.Path(destination).joinpath('se'), create=True)
         self.force = force
         self.concurrency = concurrency
+        self.clean = clean
         self.resource_files = list(f for f in self.directory.glob('*acb3030.dat') if 'AVGacb3030' not in f.stem)
         self.se_resource_file = list(self.directory.glob('*AVGacb3030.dat'))[0]
         self.extracted = self.extract_and_convert()
 
-    def extract_all(self):
+    def extract_all(self, resource_files: list[pathlib.Path]):
         _test_vgmstream()
         semaphore = threading.Semaphore(self.concurrency)
-        for file in self.resource_files:
+        for file in resource_files:
             semaphore.acquire()
-            threading.Thread(target=_extract_acb_to_wav, args=(file, self.destination, semaphore)).start()
+            threading.Thread(
+                target=_extract_acb_to_wav,
+                args=(file, self.destination, semaphore, self.force, self.clean),
+            ).start()
         for _ in range(self.concurrency):
             semaphore.acquire()
         return list(self.destination.glob('*.wav'))
@@ -156,9 +170,22 @@ class BGM:
         return mapping
 
     def extract_and_convert(self):
-        files = _transcode_files(self.extract_all(), self.force, self.concurrency)
-        _extract_acb_to_wav(self.se_resource_file, self.se_destination)
-        files.update(_transcode_files(list(self.se_destination.glob('*.wav')), self.force, self.concurrency))
+        _extract_acb_to_wav(self.se_resource_file, self.se_destination, None, self.force, self.clean)
+        files = (
+            _transcode_files(list(self.se_destination.glob('*.wav')), self.force, self.concurrency, self.clean)
+        )
+        if self.clean:
+            batch_count = min(self.concurrency * 4, 32)
+            for i in range(0, len(self.resource_files), batch_count):
+                batch = self.resource_files[i : i + batch_count]
+                files.update(_transcode_files(self.extract_all(batch), self.force, self.concurrency, self.clean))
+        else:
+            files.update(
+                _transcode_files(
+                    self.extract_all(self.resource_files),
+                    self.force, self.concurrency, self.clean,
+                ),
+            )
 
         name_mapping = self._get_audio_template()
         mapping: dict[str, pathlib.Path] = {}
