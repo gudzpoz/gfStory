@@ -85,7 +85,7 @@ class CharacterCollection:
         self.all_path_id_index = {}
         self.character_index = {}
         self.hd = hd
-        self.pngquant = pngquant
+        self.pngquant = utils.test_pngquant(pngquant)
         self.force = force
         self.concurrency = concurrency
         self._semaphore = threading.Semaphore(concurrency)
@@ -99,10 +99,8 @@ class CharacterCollection:
         try:
             subprocess.run(['magick', '--help'], stdout=subprocess.DEVNULL).check_returncode()
             subprocess.run(['convert', '-version'], stdout=subprocess.DEVNULL).check_returncode()
-            if self.pngquant:
-                subprocess.run(['pngquant', '--help'], stdout=subprocess.DEVNULL).check_returncode()
         except FileNotFoundError as e:
-            raise FileNotFoundError('imagemagick is required to merge alpha layers, pngquant is optional', e)
+            raise FileNotFoundError('imagemagick is required to merge alpha layers', e)
 
     @classmethod
     def _try_alpha_names(cls, name: str, pics: dict[str, list[Sprite | Texture2D]]):
@@ -259,11 +257,7 @@ class CharacterCollection:
         # remove intermediate files
         for file in (sprite_path, alpha_path, alpha_dims_path):
             os.remove(file)
-        # pngquant to minimize the image
-        if self.pngquant:
-            quant_path = directory.joinpath(f'{name}.fs8.png')
-            subprocess.run(['pngquant', image_path, '--ext', '.fs8.png', '--strip']).check_returncode()
-            os.replace(quant_path, image_path)
+        utils.pngquant(image_path, use_pngquant=self.pngquant)
         return image_path
 
     def load_files(self):
