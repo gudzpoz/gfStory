@@ -28,7 +28,12 @@ def _extract_zip(path: pathlib.Path, directory: pathlib.Path, force: bool = Fals
         extracted: list[pathlib.Path] = []
         for file in z.filelist:
             output = directory.joinpath(file.filename)
-            if force or not (output.is_file() or output.with_suffix('').is_file()):
+            if force or not (
+                    output.is_file() # *.acb.bytes
+                    or output.with_suffix('').is_file() # *.acb
+                    or output.with_suffix('').with_suffix('.wav').is_file() # *.wav
+                    or output.with_suffix('').with_suffix('.m4a').is_file() # *.m4a
+            ):
                 z.extract(file, directory)
                 extracted.append(output)
         return extracted

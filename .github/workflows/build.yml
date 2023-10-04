@@ -14,6 +14,15 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
+      - name: Restore Cached Resources
+        id: restore-gf-resources
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            unpack/downloader/output
+            unpack/audio
+            unpack/images
+          key: gf-resources
       - name: Install Dependencies
         run: |
           sudo apt install ffmpeg pngquant imagemagick
@@ -44,7 +53,17 @@ jobs:
           cd unpack
           source .venv/bin/activate
           python -m gfunpack downloader/output -o .
-          rm audio/*/*.wav audio/*/*.acb
+      - name: Save Unpacked Resources
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            unpack/downloader/output
+            unpack/audio
+            unpack/images
+          key: ${{ steps.restore-gf-resources.outputs.cache-primary-key }}
+      - name: Move Resources
+        run: |
+          cd unpack
           cp audio/audio.json images/backgrounds.json images/characters.json ../src/assets
           mv audio ../public
           mv images ../public
