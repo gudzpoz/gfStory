@@ -95,7 +95,7 @@ function computeCenter(i: number) {
 </template>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap');
+@import url('https://fonts.font.im/css2?family=Noto+Sans+SC&display=swap');
 
 .story-background, .story {
   position: relative;
