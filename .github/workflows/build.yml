@@ -72,7 +72,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: |
-            unpack/audio
+            unpack/images
           key: gf-image-resources
       - name: Unpack resources
         run: |
