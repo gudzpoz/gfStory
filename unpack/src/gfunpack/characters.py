@@ -58,6 +58,8 @@ class CharacterCollection:
 
     resource_files: list[pathlib.Path]
 
+    extra_alpha_resources: dict[str, Texture2D]
+
     path_id_index: dict[int, pathlib.Path]
 
     invalid_path_id_index: dict[int, tuple[pathlib.Path, str]]
@@ -92,6 +94,7 @@ class CharacterCollection:
         self.resource_files = []
         self.resource_files.extend(self.directory.glob('*resourcefairy.ab'))
         self.resource_files.extend(path for path in self.directory.glob('*character*.ab') if 'spine' not in str(path))
+        self.extra_alpha_resources = self._index_alpha_images(list(self.directory.glob('*prefab*.ab')))
         self._test_commands()
         self.load_files()
 
@@ -102,15 +105,36 @@ class CharacterCollection:
             raise FileNotFoundError('imagemagick is required to merge alpha layers', e)
 
     @classmethod
-    def _try_alpha_names(cls, name: str, pics: dict[str, list[Sprite | Texture2D]]):
-        alpha = pics.get(f'{name}_alpha')
+    def _index_alpha_images(cls, resources: list[pathlib.Path]):
+        images: dict[str, Texture2D] = {}
+        for path in resources:
+            asset = UnityPy.load(str(path))
+            for o in asset.objects:
+                if o.type.name == 'Texture2D':
+                    data = typing.cast(Texture2D, o.read())
+                    images[data.name.lower()] = data
+        return images
+
+    def _try_alpha_names(self, name: str, pics: dict[str, list[Sprite | Texture2D]]):
+        alpha_name = f'{name}_alpha'
+        alpha = pics.get(alpha_name)
         if alpha is not None:
             return alpha
+        extra = self.extra_alpha_resources.get(alpha_name.lower())
+        if extra is not None:
+            return [extra]
+
         match = re.search(_variation_name_regex, name)
         if match is None:
             return None
         # e.g. pic_cbjms_3503_3 -> pic_cbjms_3503_alpha
-        return pics.get(f'{name[:match.span()[0]]}_alpha')
+        name = name[:match.span()[0]]
+        alpha_name = f'{name}_alpha'
+        alpha = pics.get(alpha_name)
+        if alpha is not None:
+            return alpha
+        extra = self.extra_alpha_resources.get(alpha_name.lower())
+        return None if extra is None else [extra]
 
     def _add_invalid(self, obj: ObjectReader | Sprite | Texture2D, reason: str):
         if obj.type.name == 'Sprite':
