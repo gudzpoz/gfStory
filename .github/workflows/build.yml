@@ -29,16 +29,26 @@ jobs:
         run: df -h
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
-      - name: Restore Cached Resources
+        with:
+          tool-cache: false
+          large-packages: false
+          swap-storage: false
+      - name: Restore Cached Unpacked Resources
         id: restore-gf-resources
         uses: actions/cache/restore@v3
         with:
           path: |
-            unpack/downloader/output
             unpack/audio
             unpack/images
             unpack/stories
           key: gf-resources
+      - name: Restore Cached Resources
+        id: restore-gf-downloader-resources
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            unpack/downloader/output
+          key: gf-downloader-resources
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v3
       - name: Setup Python Environment
@@ -53,6 +63,12 @@ jobs:
           source .venv/bin/activate
           cd downloader
           python downloader.py
+      - name: Cache Downloaded Resources
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            unpack/downloader/output
+          key: ${{ steps.restore-gf-downloader-resources.outputs.cache-primary-key }}
       - name: Unpack resources
         run: |
           cd unpack
@@ -64,7 +80,6 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: |
-            unpack/downloader/output
             unpack/audio
             unpack/images
             unpack/stories
