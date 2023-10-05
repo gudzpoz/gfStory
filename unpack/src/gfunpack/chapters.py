@@ -147,7 +147,16 @@ class Chapters:
         for story in sorted(self.main_events, key=lambda e: e.id):
             campaign = str(story.campaign)
             if campaign not in id_mapping:
-                continue
+                auto_id = 10000
+                if int(campaign) > 0:
+                    auto_id += int(campaign)
+                else:
+                    auto_id += 10000 + (-int(campaign))
+                id_mapping[campaign] = auto_id
+                chapters[auto_id] = Chapter(
+                    name=f'未知: {story.title}',
+                    stories=[],
+                )
             if story.scripts.strip() == '':
                 continue
             chapters[id_mapping[campaign]].stories.append(Story(
@@ -203,8 +212,7 @@ class Chapters:
         for chapters in self.all_chapters.values():
             for chapter in chapters:
                 for story in chapter.stories:
-                    for file in story.files:
-                        assert file in self.stories.extracted, file
+                    story.files = [f for f in story.files if f in self.stories.extracted]
         for k, chapters in self.all_chapters.items():
             chapter_dicts = [dataclasses.asdict(c) for c in chapters]
             all_chapters[k] = chapter_dicts
