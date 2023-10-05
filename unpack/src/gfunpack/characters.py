@@ -238,10 +238,7 @@ class CharacterCollection:
         sprite = _get_pic_of_type(pic, 'Sprite')
         sprite.image.save(image_path)
         # pngquant to minimize the image
-        if self.pngquant:
-            quant_path = directory.joinpath(f'{name}.fs8.png')
-            subprocess.run(['pngquant', image_path, '--ext', '.fs8.png', '--strip']).check_returncode()
-            os.replace(quant_path, image_path)
+        utils.pngquant(image_path, use_pngquant=self.pngquant)
         return image_path
 
     def _merge_alpha_channel(self, directory: pathlib.Path, name: str, sprite: Texture2D, alpha_sprite: Texture2D) -> pathlib.Path:

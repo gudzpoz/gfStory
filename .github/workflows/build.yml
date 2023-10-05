@@ -14,17 +14,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-      - name: Install Dependencies
-        run: |
-          sudo apt install ffmpeg pngquant imagemagick
-          wget https://github.com/vgmstream/vgmstream-releases/releases/download/nightly/vgmstream-linux-cli.tar.gz
-          tar -zxf vgmstream-linux-cli.tar.gz
-          mkdir bin
-          mv vgmstream-cli bin
-          wget https://imagemagick.org/archive/binaries/magick
-          mv magick bin
-          chmod a+x bin/*
-          echo "${PWD}/bin" >> $GITHUB_PATH
       - name: Log Disk Space
         run: df -h
       - name: Free Disk Space
@@ -33,15 +22,17 @@ jobs:
           tool-cache: false
           large-packages: false
           swap-storage: false
-      - name: Restore Cached Unpacked Resources
-        id: restore-gf-resources
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            unpack/audio
-            unpack/images
-            unpack/stories
-          key: gf-resources
+      - name: Install Dependencies
+        run: |
+          sudo apt install ffmpeg pngquant imagemagick libfuse2
+          wget https://github.com/vgmstream/vgmstream-releases/releases/download/nightly/vgmstream-linux-cli.tar.gz
+          tar -zxf vgmstream-linux-cli.tar.gz
+          mkdir bin
+          mv vgmstream-cli bin
+          wget https://imagemagick.org/archive/binaries/magick
+          mv magick bin
+          chmod a+x bin/*
+          echo "${PWD}/bin" >> $GITHUB_PATH
       - name: Restore Cached Resources
         id: restore-gf-downloader-resources
         uses: actions/cache/restore@v3
@@ -69,6 +60,20 @@ jobs:
           path: |
             unpack/downloader/output
           key: ${{ steps.restore-gf-downloader-resources.outputs.cache-primary-key }}
+      - name: Restore Cached Resources (audio)
+        id: restore-audio-resources
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            unpack/audio
+          key: gf-audio-resources
+      - name: Restore Cached Resources (images)
+        id: restore-image-resources
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            unpack/audio
+          key: gf-image-resources
       - name: Unpack resources
         run: |
           cd unpack
@@ -76,14 +81,18 @@ jobs:
           python -m gfunpack downloader/output -o .
       - name: Log Disk Space
         run: df -h
-      - name: Cache Unpacked Resources
+      - name: Cache Resources (audio)
         uses: actions/cache/save@v3
         with:
           path: |
             unpack/audio
+          key: ${{ steps.restore-audio-resources.outputs.cache-primary-key }}
+      - name: Cache Resources (images)
+        uses: actions/cache/save@v3
+        with:
+          path: |
             unpack/images
-            unpack/stories
-          key: ${{ steps.restore-gf-resources.outputs.cache-primary-key }}
+          key: ${{ steps.restore-image-resources.outputs.cache-primary-key }}
       - name: Move Resources
         run: |
           cd unpack
