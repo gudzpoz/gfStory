@@ -49,6 +49,14 @@ function play(state: boolean) {
     player.value.play();
   }
 }
+
+const showPopover = ref(false);
+function preventHide(e: MouseEvent) {
+  const { target } = e;
+  if ((target as HTMLElement).closest('.n-image-preview-container')) {
+    showPopover.value = true;
+  }
+}
 </script>
 
 <template>
@@ -74,10 +82,14 @@ function play(state: boolean) {
         <question-mark-filled></question-mark-filled>
       </n-icon>
     </n-icon-wrapper>
-    <n-popover v-else trigger="hover">
-      <n-image :src="dataUrl" width="200"></n-image>
+    <n-popover v-else trigger="click" v-model:show="showPopover"
+      @clickoutside="preventHide"
+    >
+      <n-image :src="dataUrl" width="200">
+      </n-image>
       <template #trigger>
-        <n-avatar :src="dataUrl"></n-avatar>
+        <n-avatar :src="dataUrl" @mouseenter="showPopover = true">
+        </n-avatar>
       </template>
     </n-popover>
     <span v-if="wide">{{ name }}</span>

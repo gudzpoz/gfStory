@@ -30,4 +30,6 @@ coverage
 # Builds
 viewer/
 public/viewer.html
+public/audio
+public/images
 src/assets/*.json
