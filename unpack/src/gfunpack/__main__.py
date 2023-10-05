@@ -16,9 +16,6 @@ cpus = os.cpu_count() or 2
 downloaded = args.dir
 destination = pathlib.Path(args.output)
 
-ss = stories.Stories(downloaded, str(destination.joinpath('stories')))
-ss.save()
-
 images = destination.joinpath('images')
 bg = backgrounds.BackgroundCollection(downloaded, str(images), pngquant=True, concurrency=cpus)
 bg.save()
@@ -31,3 +28,6 @@ character_mapper.write_indices()
 
 bgm = audio.BGM(downloaded, str(destination.joinpath('audio')), concurrency=cpus, clean=not args.no_clean)
 bgm.save()
+
+ss = stories.Stories(downloaded, str(destination.joinpath('stories')))
+ss.save()

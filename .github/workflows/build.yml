@@ -9,21 +9,11 @@ permissions:
 
 jobs:
   documentation:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-      - name: Restore Cached Resources
-        id: restore-gf-resources
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            unpack/downloader/output
-            unpack/audio
-            unpack/images
-            unpack/stories
-          key: gf-resources
       - name: Install Dependencies
         run: |
           sudo apt install ffmpeg pngquant imagemagick
@@ -35,6 +25,20 @@ jobs:
           mv magick bin
           chmod a+x bin/*
           echo "${PWD}/bin" >> $GITHUB_PATH
+      - name: Log Disk Space
+        run: df -h
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+      - name: Restore Cached Resources
+        id: restore-gf-resources
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            unpack/downloader/output
+            unpack/audio
+            unpack/images
+            unpack/stories
+          key: gf-resources
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v3
       - name: Setup Python Environment
@@ -54,7 +58,9 @@ jobs:
           cd unpack
           source .venv/bin/activate
           python -m gfunpack downloader/output -o .
-      - name: Save Unpacked Resources
+      - name: Log Disk Space
+        run: df -h
+      - name: Cache Unpacked Resources
         uses: actions/cache/save@v3
         with:
           path: |
