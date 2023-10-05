@@ -197,6 +197,8 @@ class BGM:
                 bar,
             ))
         bar.close()
+        files.update((existing.stem, existing) for existing in self.destination.glob('*.m4a'))
+        files.update((existing.stem, existing) for existing in self.se_destination.glob('*.m4a'))
 
         name_mapping = self._get_audio_template()
         mapping: dict[str, pathlib.Path] = {}
