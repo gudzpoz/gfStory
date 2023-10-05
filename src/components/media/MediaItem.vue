@@ -8,6 +8,7 @@ import {
 } from '@vicons/material';
 
 import { db, type MediaUrl } from '../../db/media';
+import { getUrlType } from '../../types/assets';
 
 const props = defineProps<{
   wide?: boolean,
@@ -22,7 +23,9 @@ const emit = defineEmits<{
 
 const dataUrl = ref('');
 const updateDataUrl = () => {
-  if (props.url !== '') {
+  if (!db.isMediaUrl(props.url)) {
+    dataUrl.value = props.url;
+  } else if (props.url !== '') {
     db.toDataUrl(props.url).then((s) => {
       dataUrl.value = s;
     });
@@ -34,8 +37,13 @@ watch(() => props.url, updateDataUrl);
 updateDataUrl();
 
 const playing = ref(false);
-const name = computed(() => db.splitMediaUrl(props.url)[1]);
-const type = computed(() => db.splitMediaUrl(props.url)[0]);
+const name = computed(() => (
+  db.isMediaUrl(props.url) ? db.splitMediaUrl(props.url)[1] : props.url
+));
+
+const type = computed(() => (
+  db.isMediaUrl(props.url) ? db.splitMediaUrl(props.url)[0] : getUrlType(props.url)
+));
 
 const player = ref<HTMLAudioElement>();
 function play(state: boolean) {
@@ -62,7 +70,7 @@ function preventHide(e: MouseEvent) {
 <template>
   <n-space align="center" class="media-item" :wrap="false">
     <n-button type="error" size="tiny"
-      @click.stop="emit('remove')" v-if="wide && removable !== false"
+      @click.stop="emit('remove')" v-if="wide && removable !== false && db.isMediaUrl(url)"
     >
       <n-icon><close-filled></close-filled></n-icon>
     </n-button>

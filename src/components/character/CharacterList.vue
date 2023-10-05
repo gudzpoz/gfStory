@@ -3,6 +3,7 @@ import {
   NButton, NDataTable, NIcon, NInput,
   NList, NListItem, NModal,
   NSpace, NTag,
+  useNotification,
   type DataTableBaseColumn, type DataTableColumns,
 } from 'naive-ui';
 import {
@@ -57,6 +58,7 @@ type Preset = {
   image: string;
   image_count: number;
 };
+const notify = useNotification();
 function importPreset(preset: Preset) {
   const character = characterPresets[preset.name];
   const unique = getUniqueName(preset.name, characters.value, 0) ?? preset.name;
@@ -72,6 +74,7 @@ function importPreset(preset: Preset) {
       center: [-1, -1],
     })),
   });
+  notify.info({ content: `已导入 ${preset.name}` });
 }
 const showPresetModal = ref(false);
 const presetNameColumn: DataTableBaseColumn<Preset> = reactive({

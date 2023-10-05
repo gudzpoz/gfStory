@@ -4,7 +4,7 @@
     "env.d.ts",
     "src/**/*",
     "src/**/*.vue",
-    "src/assets/characters.json"
+    "src/assets/*.json"
   ],
   "exclude": ["src/**/__tests__/*"],
   "compilerOptions": {

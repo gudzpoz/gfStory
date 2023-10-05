@@ -1,3 +1,5 @@
+import { MEDIA_TYPES } from '../db/media';
+
 export type AudioInfo = {
   [audioIdentifier: string]: string;
 };
@@ -21,3 +23,20 @@ export type GfCharactersInfo = {
 };
 
 export const IMAGE_PATH_PREFIX = '/images/';
+export const AUDIO_PATH_PREFIX = '/audio/';
+
+export function getUrlType(s: string): typeof MEDIA_TYPES[number] {
+  if (s.startsWith(IMAGE_PATH_PREFIX)) {
+    return 'background';
+  }
+  if (s.startsWith(AUDIO_PATH_PREFIX)) {
+    return 'audio';
+  }
+  if (s.startsWith('background/')) {
+    return 'background';
+  }
+  if (s.startsWith('bgm/') || s.startsWith('se/')) {
+    return 'audio';
+  }
+  return 'sprite';
+}

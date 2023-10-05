@@ -83,8 +83,13 @@ export class MediaDatabase extends Dexie {
     return s.split(':', 2) as [typeof MEDIA_TYPES[number], string];
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  isMediaUrl(s: MediaUrl) {
+    return !s.startsWith('/') && s.includes(':');
+  }
+
   async toDataUrl(s: MediaUrl) {
-    if (s.startsWith('/') || !s.includes(':')) {
+    if (!this.isMediaUrl(s)) {
       return s;
     }
     const [t, name] = this.splitMediaUrl(s);
