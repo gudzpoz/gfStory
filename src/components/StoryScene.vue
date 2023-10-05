@@ -164,9 +164,13 @@ function computeCenter(i: number) {
   position: absolute;
   bottom: 0;
   min-width: 300px;
-  min-height: 7em;
-  margin: 1em;
+  min-height: 12em;
+  margin: auto;
+  margin-bottom: 2em;
   width: calc(100% - 2em);
+  max-width: 50em;
+  left: 0;
+  right: 0;
 
   border: 1.5px solid #ccca;
   box-shadow: inset 0 0 1px black;

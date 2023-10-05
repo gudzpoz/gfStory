@@ -8,9 +8,9 @@ const props = defineProps<{
   framed?: boolean,
 }>();
 
-const idealHeightRatio = 0.6;
+const idealHeightRatio = 0.8;
 const idealWHRatio = 11 / 16;
-const idealCenterTop = 0.4;
+const idealCenterTop = 0.45;
 
 function computeImageProperties() {
   const { sprite } = props;
