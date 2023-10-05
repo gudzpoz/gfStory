@@ -2,7 +2,7 @@ import argparse
 import os
 import pathlib
 
-from gfunpack import audio, backgrounds, characters, mapper, prefabs, stories
+from gfunpack import audio, backgrounds, chapters, characters, mapper, prefabs, stories
 
 
 parser = argparse.ArgumentParser()
@@ -31,3 +31,5 @@ bgm.save()
 
 ss = stories.Stories(downloaded, str(destination.joinpath('stories')))
 ss.save()
+cs = chapters.Chapters(ss)
+cs.save()

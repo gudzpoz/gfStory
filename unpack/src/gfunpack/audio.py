@@ -51,7 +51,6 @@ def _test_ffmpeg():
 
 def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int, clean: bool,
                      bar: tqdm.tqdm | None = None):
-    _test_ffmpeg()
     semaphore = threading.Semaphore(concurrency)
     def transcode(file: pathlib.Path, output: pathlib.Path):
         nonlocal clean, force, semaphore
@@ -139,6 +138,7 @@ class BGM:
         self.clean = clean
         self.resource_files = list(f for f in self.directory.glob('*acb3030.dat') if 'AVGacb3030' not in f.stem)
         self.se_resource_file = list(self.directory.glob('*AVGacb3030.dat'))[0]
+        _test_ffmpeg()
         self.extracted = self.extract_and_convert()
 
     def extract_all(self, resource_files: list[pathlib.Path]):

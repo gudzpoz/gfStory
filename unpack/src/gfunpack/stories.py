@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import pathlib
 import re
 import typing
@@ -12,7 +13,7 @@ from gfunpack import mapper, utils
 _logger = logging.getLogger('gfunpack.prefabs')
 _warning = _logger.warning
 
-_text_asset_regex = re.compile('^assets/resources/dabao/avgtxt/([^/]+.txt)$')
+_text_asset_regex = re.compile('^assets/resources/dabao/avgtxt/(.+.txt)$')
 
 _speaker_regex = re.compile('<speaker>(.*)</speaker>', re.IGNORECASE)
 _sprite_regex = re.compile('^([^()<>]*)\\((\\d*)\\)')
@@ -225,7 +226,8 @@ class Stories:
                 o.read(),
             )
             content: str = text.m_Script.tobytes().decode()
-            path = self.destination.joinpath(name)
+            path = self.destination.joinpath(*name.split('/'))
+            os.makedirs(path.parent, exist_ok=True)
             with path.open('w') as f:
                 f.write(self.transpiler.decode(content, name))
             extracted[name] = path

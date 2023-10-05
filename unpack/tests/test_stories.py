@@ -1,10 +1,12 @@
+from gfunpack import chapters
 from gfunpack import stories
 
 
 def test_stories():
-    s = stories.Stories('downloader/output', 'stories')
-    s.save()
-
+    ss = stories.Stories('downloader/output', 'stories')
+    ss.save()
+    chapters.Chapters(ss).save()
+    
 
 if __name__ == '__main__':
     test_stories()

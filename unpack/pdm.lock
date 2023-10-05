@@ -6,7 +6,7 @@ groups = ["default", "dev"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:f095c44efecee9a13a45b1d8c773a0ac18483f7d86580137e9d61c2ef4f0c958"
+content_hash = "sha256:1cd94f418b594dc7f57df5ef19308b4d2a86da728f0ae8a264cb7d5d778809c5"
 
 [[package]]
 name = "anyio"
@@ -401,6 +401,15 @@ summary = "File-system specification"
 files = [
     {file = "fsspec-2023.9.2-py3-none-any.whl", hash = "sha256:603dbc52c75b84da501b9b2ec8c11e1f61c25984c4a0dda1f129ef391fbfc9b4"},
     {file = "fsspec-2023.9.2.tar.gz", hash = "sha256:80bfb8c70cc27b2178cc62a935ecf242fc6e8c3fb801f9c571fc01b1e715ba7d"},
+]
+
+[[package]]
+name = "hjson"
+version = "3.1.0"
+summary = "Hjson, a user interface for JSON."
+files = [
+    {file = "hjson-3.1.0-py3-none-any.whl", hash = "sha256:65713cdcf13214fb554eb8b4ef803419733f4f5e551047c9b711098ab7186b89"},
+    {file = "hjson-3.1.0.tar.gz", hash = "sha256:55af475a27cf83a7969c808399d7bccdec8fb836a07ddbd574587593b9cdcf75"},
 ]
 
 [[package]]

@@ -96,7 +96,7 @@ jobs:
       - name: Move Resources
         run: |
           cd unpack
-          cp audio/audio.json images/backgrounds.json images/characters.json stories/stories.json ../src/assets
+          cp audio/audio.json images/backgrounds.json images/characters.json stories/stories.json stories/chapters.json ../src/assets
           mv audio ../public
           mv images ../public
           mv stories ../public
