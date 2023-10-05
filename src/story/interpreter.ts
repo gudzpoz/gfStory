@@ -19,6 +19,8 @@ export interface StoryLine {
 
     audio?: string,
 
+    se?: string;
+
     sprites?: string,
     remote?: string,
   };
@@ -97,14 +99,18 @@ export class StoryInterpreter {
     this.preloadedImages = {};
     const images = this.characters.flatMap((c) => c.sprites.map((s) => {
       const image = new Image();
-      return new Promise<[string, SpriteImage]>((resolve, reject) => {
+      return new Promise<[string, SpriteImage]>((resolve) => {
         image.src = s.url;
         const sprite = s as SpriteImage;
         sprite.image = image;
-        image.onload = () => resolve(
-          [`${c.name}/${s.name}`, sprite],
-        );
-        image.onerror = reject;
+        const result = [`${c.name}/${s.name}`, sprite] as [string, SpriteImage];
+        image.onload = () => resolve(result);
+        image.onerror = () => {
+          if (image.src !== '') {
+            image.classList.add('failed');
+          }
+          resolve(result);
+        };
       });
     }));
     this.preloadedImages = Object.fromEntries(await Promise.all(images));

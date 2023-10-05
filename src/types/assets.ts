@@ -24,6 +24,7 @@ export type GfCharactersInfo = {
 
 export const IMAGE_PATH_PREFIX = '/images/';
 export const AUDIO_PATH_PREFIX = '/audio/';
+export const STORY_PATH_PREFIX = '/stories/';
 
 export function getUrlType(s: string): typeof MEDIA_TYPES[number] {
   if (s.startsWith(IMAGE_PATH_PREFIX)) {

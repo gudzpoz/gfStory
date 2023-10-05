@@ -106,14 +106,14 @@ class StoryTranspiler:
                 return {
                     'name': sprite,
                     'url': f'/images/{s.path}',
-                    'scale': s.scale,
+                    'scale': -1,
                     'center': (-1, -1),
                 }
         return {
             'name': sprite,
             'url': '',
-            'center': (-1, -1),
             'scale': -1,
+            'center': (-1, -1),
         }
     
     def _inject_lua_scripts(self, characters: dict[str, dict[int, str]]):
@@ -133,6 +133,7 @@ class StoryTranspiler:
         if filename in ['avgplaybackprofiles.txt', 'profiles.txt']:
             return script
         markdown: list[str] = []
+        remote_characters: dict[str, str] = {}
         characters: dict[str, dict[int, str]] = {}
         for line in script.split('\n'):
             line = line.strip()
@@ -153,8 +154,11 @@ class StoryTranspiler:
                 bg = effects['bin']
                 if bg == '':
                     _warning('invalid bg for `%s` in %s', metadata, filename)
-                bg = self.backgrounds.get(bg, f'background/{bg}.png')
-                markdown.append(f':background[] /images/{bg}')
+                bg_path = self.backgrounds.get(bg)
+                if bg_path is None or bg_path == '':
+                    _warning('background not found for `%s` in %s', bg, filename)
+                    bg_path = f'background/{bg}.png'
+                markdown.append(f':background[] /images/{bg_path}')
             if 'bgm' in effects:
                 bgm = self.audio.get(effects['bgm'], f'bgm/{effects["bgm"]}.m4a')
                 markdown.append(f':audio[] /audio/{bgm}')
@@ -163,11 +167,13 @@ class StoryTranspiler:
                 se = self.audio.get(se, f'se/{se}.m4a')
                 markdown.append(f':se[] /audio/{se}')
             if '黑屏1' in effects or '黑屏2' in effects:
-                markdown.append(f':background[] /images/')
+                pass
             content = self._convert_content(content)
             sprite_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites)
+            remote_characters.update((character, '')
+                                     for character, _, attrs in sprites if '通讯框' in attrs)
             remote_string = '|'.join(f'{character}/{sprite}'
-                                     for character, sprite, attrs in sprites if '通讯框' in attrs)
+                                     for character, sprite, _ in sprites if character in remote_characters)
             for character, sprite, _ in sprites:
                 if character not in characters:
                     characters[character] = {}

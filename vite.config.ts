@@ -23,6 +23,7 @@ export default defineConfig({
         viewer: fileURLToPath(new URL('./viewer.html', import.meta.url)),
       } : {
         editor: fileURLToPath(new URL('./index.html', import.meta.url)),
+        simulator: fileURLToPath(new URL('./simulator.html', import.meta.url)),
       },
     },
   },

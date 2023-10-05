@@ -60,7 +60,7 @@ function computeCenter(i: number) {
     <div class="button-slot">
       <slot></slot>
     </div>
-    <img v-show="backgroundUrl"
+    <img v-show="backgroundUrl.endsWith('/') ? '' : backgroundUrl"
       :src="backgroundUrl"
       :style="{ objectFit: backgroundStyle }"
     />
@@ -147,6 +147,9 @@ function computeCenter(i: number) {
   position: absolute;
   width: 100%;
   height: 100%;
+}
+.story-background > img[src=""] {
+  opacity: 0;
 }
 
 .story {

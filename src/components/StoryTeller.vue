@@ -39,6 +39,11 @@ function nextLine() {
       if (display === 'cover' || display === 'contain') {
         style.value = display;
       }
+    } else if (line.tags.se !== undefined) {
+      const audio = line.text.trim().replace(/\\/g, '');
+      const sePlayer = new Audio(audio);
+      sePlayer.loop = false;
+      sePlayer.play();
     } else if (line.tags.audio !== undefined) {
       const audio = line.text.trim().replace(/\\/g, '');
       if (backgroundMusic !== null) {
@@ -68,6 +73,7 @@ function nextLine() {
     }
     line = story.next();
   }
+  text.value = '<i>故事结束</i>';
 }
 
 async function getGlobalStory() {

@@ -62,7 +62,7 @@ const [
         height: `${boxHeight}px`,
       }"
     >
-      <img :src="sprite.image.src"
+      <img :src="sprite.image.classList.contains('failed') ? '' : sprite.image.src"
         :style="{
           left: `${left}px`,
           top: `${top}px`,
@@ -146,5 +146,9 @@ const [
   height: 2px;
   box-shadow: 0 1px 3px aqua, 0 -1px 3px aqua, 0 0 6px aqua inset;
   animation: scan-line 15s linear 5s infinite;
+}
+
+.sprite img[src=""] {
+  opacity: 0;
 }
 </style>
