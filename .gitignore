@@ -32,4 +32,5 @@ viewer/
 public/viewer.html
 public/audio
 public/images
+public/stories
 src/assets/*.json

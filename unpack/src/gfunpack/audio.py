@@ -217,5 +217,5 @@ class BGM:
     def save(self):
         path = self.destination.parent.joinpath('audio.json')
         with path.open('w') as f:
-            f.write(json.dumps(dict((k, str(v)) for k, v in self.extracted.items()), indent=2))
+            f.write(json.dumps(dict((k, str(v)) for k, v in self.extracted.items()), indent=2, ensure_ascii=False))
         return path

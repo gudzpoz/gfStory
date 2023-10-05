@@ -2,7 +2,7 @@ import argparse
 import os
 import pathlib
 
-from gfunpack import audio, backgrounds, characters, mapper, prefabs
+from gfunpack import audio, backgrounds, characters, mapper, prefabs, stories
 
 
 parser = argparse.ArgumentParser()
@@ -15,6 +15,9 @@ cpus = os.cpu_count() or 2
 
 downloaded = args.dir
 destination = pathlib.Path(args.output)
+
+ss = stories.Stories(downloaded, str(destination.joinpath('stories')))
+ss.save()
 
 images = destination.joinpath('images')
 bg = backgrounds.BackgroundCollection(downloaded, str(images), pngquant=True, concurrency=cpus)

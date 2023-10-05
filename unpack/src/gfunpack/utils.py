@@ -46,7 +46,7 @@ def read_text_asset(bundle: pathlib.Path, container: str):
     assert profile_reader.type.name == 'TextAsset'
     profile = typing.cast(
         TextAsset,
-        profile_reader.read()
+        profile_reader.read(),
     )
     content: str = profile.m_Script.tobytes().decode()
     return content

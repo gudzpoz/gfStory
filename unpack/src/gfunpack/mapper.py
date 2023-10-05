@@ -120,6 +120,6 @@ class Mapper:
             data = getattr(self, name)
             path = self.characters.destination.joinpath(f'{name}.json')
             with open(path, 'w') as f:
-                f.write(json.dumps(data, indent=2))
+                f.write(json.dumps(data, indent=2, ensure_ascii=False))
             if name == 'mapped':
                 path.rename(self.characters.destination.joinpath('characters.json'))
