@@ -41,3 +41,15 @@ export function getUrlType(s: string): typeof MEDIA_TYPES[number] {
   }
   return 'sprite';
 }
+
+export type ChapterType = 'main' | 'bonding' | 'upgrading';
+export type Story = {
+  name: string;
+  description: string;
+  files: string[];
+};
+export type Chapter = {
+  name: string;
+  stories: Story[];
+};
+export type GfChaptersInfo = Record<ChapterType, Chapter[]>;

@@ -8,9 +8,14 @@ import { h, ref } from 'vue';
 
 import StoryTeller from './components/StoryTeller.vue';
 import { compileMarkdown } from './story/compiler';
-import { STORY_PATH_PREFIX } from './types/assets';
+import {
+  STORY_PATH_PREFIX,
+  type ChapterType, type GfChaptersInfo,
+} from './types/assets';
 
-import storyPresets from './assets/stories.json';
+import jsonChapterPresets from './assets/chapters.json';
+
+const chapterPresets: GfChaptersInfo = jsonChapterPresets;
 
 const chunk = ref('');
 function switchStory(path: string) {
@@ -21,19 +26,47 @@ function switchStory(path: string) {
 
 const showMenu = ref(false);
 const menuSearch = ref('');
-const data: TreeOption[] = Object.keys(storyPresets).sort().map((name) => ({
-  label: name,
-  key: name,
-  prefix: () => h(
-    NButton,
-    {
-      onClick: () => switchStory(`${STORY_PATH_PREFIX}${
-        (storyPresets as Record<string, string>)[name]
-      }`),
-    },
-    { default: () => '选择' },
-  ),
-}));
+function generateLeafOption(key: string, label: string, story: string): TreeOption {
+  return {
+    key,
+    label,
+    prefix: () => h(
+      NButton,
+      { onClick: () => switchStory(`${STORY_PATH_PREFIX}${story}`) },
+      { default: () => '选择' },
+    ),
+  };
+}
+function generateChapterOption(label: ChapterType, name: string): TreeOption {
+  const chapters = chapterPresets[label];
+  return {
+    key: label,
+    label: name,
+    children: chapters.map((chapter, i) => ({
+      key: `${label}-${i}`,
+      label: chapter.name,
+      children: chapter.stories.map((story, j) => {
+        const key = `${label}-${i}-${j}`;
+        if (story.files.length === 0) {
+          return { key, label: story.name };
+        }
+        if (story.files.length === 1) {
+          return generateLeafOption(key, story.name, story.files[0]);
+        }
+        return {
+          key,
+          label: story.name,
+          children: story.files.map((file, k) => generateLeafOption(`${key}/${file}`, `阶段 ${k}`, file)),
+        };
+      }),
+    })),
+  };
+}
+const data: TreeOption[] = [
+  generateChapterOption('main', '主线支线活动故事'),
+  generateChapterOption('upgrading', '心智升级故事'),
+  generateChapterOption('bonding', '格里芬往事'),
+];
 </script>
 
 <template>
