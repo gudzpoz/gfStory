@@ -60,12 +60,13 @@ class StoryTranspiler:
         return line
 
     @classmethod
-    def _convert_content(cls, content: str):
-        return "".join(
-            f'<p>{cls._convert_content_line(line)}</p>'
+    def _convert_content(cls, content: str, tags: str | None = None):
+        tags = '' if tags is None else f'{tags} '
+        return [
+            f'{tags}<p>{cls._convert_content_line(line)}</p>'
             for line in content.split('+')
-        )
-    
+        ]
+
     def _parse_narrators(self, narrators: str):
         sprites: list[tuple[str, int, dict[str, str]]] = []
         speakers = []
@@ -168,8 +169,8 @@ class StoryTranspiler:
             if 'bgm' in effects:
                 bgm = self.audio.get(effects['bgm'], f'bgm/{effects["bgm"]}.m4a')
                 markdown.append(f':audio[] /audio/{bgm}')
-            if 'se1' in effects or 'se2' in effects:
-                se = effects.get('se1') or effects.get('se2') or ''
+            if 'se' in effects or 'se1' in effects or 'se2' in effects or 'se3' in effects:
+                se =  effects.get('se') or effects.get('se1') or effects.get('se2') or effects.get('se3') or ''
                 se = self.audio.get(se, f'se/{se}.m4a')
                 markdown.append(f':se[] /audio/{se}')
             if 'cg' in effects:
@@ -182,7 +183,6 @@ class StoryTranspiler:
                 pass
             options = content.split('<c>')
             content, options = options[0], options[1:]
-            content = self._convert_content(content)
             sprite_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites)
             remote_narrators = set(character for character, _, attrs in sprites if '通讯框' in attrs or character in remote_narrators)
             remote_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites if character in remote_narrators)
@@ -195,12 +195,8 @@ class StoryTranspiler:
                     characters[character] = {}
                 characters[character][sprite] = ''
 
-            markdown.append(f'{branching}\
-:sprites[{sprite_string}] \
-:remote[{remote_string}] \
-:narrator[{speaker}] \
-:color[#fff] \
-{content}')
+            tags = f'{branching} :sprites[{sprite_string}] :remote[{remote_string}] :narrator[{speaker}] :color[#fff]'
+            markdown.extend(self._convert_content(content, tags))
             if len(options) != 0:
                 for i, option in enumerate(options, 1):
                     markdown.append(f'- {self._convert_content(option)}\n\n  `branch = {i}`')
