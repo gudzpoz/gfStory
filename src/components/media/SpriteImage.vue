@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import {
+  onMounted, onUnmounted, ref, watch,
+} from 'vue';
 
 import type { SpriteImage } from '../../story/interpreter';
 
@@ -13,13 +15,14 @@ const props = defineProps<{
 const idealHeightRatio = 1;
 const idealWHRatio = 11 / 16;
 const idealCenterTop = 0.70;
+const framedAdjustment = 0.6;
 
 function computeImageProperties() {
   const { sprite } = props;
   const { naturalWidth, naturalHeight } = sprite.image;
   const { clientHeight } = props.container;
 
-  const idealHeight = clientHeight * idealHeightRatio;
+  const idealHeight = clientHeight * idealHeightRatio * (props.framed ? framedAdjustment : 1);
   const idealWidth = idealHeight * idealWHRatio;
   const idealScale = idealHeight / naturalHeight;
   const scale = idealScale * (sprite.scale > 0 ? sprite.scale : 1);
@@ -28,14 +31,18 @@ function computeImageProperties() {
   const height = scale * naturalHeight;
   const [centerX, centerY] = sprite.center;
 
+  const centerRatio = idealCenterTop - (
+    props.framed ? idealHeightRatio * framedAdjustment * 0.5 : 0
+  );
+
   if (!props.framed) {
     const left = -scale * (centerX > 0 ? centerX : naturalWidth / 2);
-    const top = clientHeight * idealCenterTop - scale * (centerY > 0 ? centerY : naturalHeight / 2);
+    const top = clientHeight * centerRatio - scale * (centerY > 0 ? centerY : naturalHeight / 2);
 
     return [width, height, width, height, left, top, 0, 0, 'none'];
   }
   const boxLeft = -idealWidth / 2;
-  const boxTop = clientHeight * idealCenterTop - idealHeight / 2;
+  const boxTop = clientHeight * centerRatio - idealHeight / 2;
   const left = idealWidth / 2 - scale * (centerX > 0 ? centerX : naturalWidth / 2);
   const top = idealHeight / 2 - scale * (centerY > 0 ? centerY : naturalHeight / 2);
   return [
@@ -67,6 +74,7 @@ function updateImageProperties() {
 updateImageProperties();
 onMounted(() => window.addEventListener('resize', updateImageProperties));
 onUnmounted(() => window.removeEventListener('resize', updateImageProperties));
+watch(() => props.framed, updateImageProperties);
 </script>
 
 <template>
