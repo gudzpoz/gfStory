@@ -2,7 +2,6 @@ import dataclasses
 import json
 import logging
 import typing
-import urllib.request
 
 import hjson
 
@@ -18,8 +17,6 @@ _bonding_info_file = 'fetter_story.hjson'
 _gun_info_file = 'gun.hjson'
 _upgrade_info_file = 'mindupdate_story_info.hjson'
 
-_info_download_url = 'https://cdn.jsdelivr.net/gh/gf-data-tools/gf-data-ch@main/formatted/'
-
 
 T = typing.TypeVar('T')
 
@@ -30,6 +27,17 @@ class ChapterInfo:
     type: int = 0
     story_campaign_id: str = '0'
     chapter: str = '0'
+
+
+_extra_chapters =  {
+    '-8': '猎兔行动',
+    '-14,-15': '独法师',
+    '-19,-20,-22': '荣耀日',
+    '-32': '瓦尔哈拉',
+    '-38': '梦间剧',
+    '-43': '暗金潮',
+    '-46': '小邪神前线',
+}
 
 
 @dataclasses.dataclass
@@ -98,6 +106,7 @@ class Story:
 @dataclasses.dataclass
 class Chapter:
     name: str
+    description: str
     stories: list[Story]
 
 
@@ -128,41 +137,69 @@ class Chapters:
         self.gun_info = self._fetch(_gun_info_file, dict)
         self.all_chapters = self.categorize_stories()
 
-    @classmethod
-    def _fetch(cls, file: str, item_type: typing.Type[T]) -> list[T]:
-        with urllib.request.urlopen(_info_download_url + file) as f:
-            data = hjson.loads(f.read().decode('utf-8'))
+    def _fetch(self, file: str, item_type: typing.Type[T]) -> list[T]:
+        with self.stories.gf_data_directory.joinpath('formatted', file).open() as f:
+            data = hjson.loads(f.read())
             assert isinstance(data, list)
             return [item_type(**item) for item in data]
+
+    @classmethod    
+    def _parse_point_scripts(cls, point: str):
+        return [s.split(':')[1] for s in point.split(',') if s != '']
+
+    @classmethod
+    def _parse_event_stories(cls, story: EventStoryInfo):
+        scripts = [s.strip().lower() for s in story.scripts.split(',')]
+        if story.first != '' and story.first not in scripts:
+            scripts.insert(0, story.first)
+        if story.start != '' and story.start not in scripts:
+            scripts.insert(0, story.start)
+        for extra in (story.point, story.step_start_story, story.round):
+            scripts.extend(cls._parse_point_scripts(extra))
+        if story.end != '' and story.end not in scripts:
+            scripts.append(story.end)
+        return [f'{s.strip()}.txt' for s in scripts if s.strip() != '']
+        
 
     def _categorize_main_stories(self):
         chapters: dict[int, Chapter] = {}
         id_mapping: dict[str, int] = {}
+        for keys, name in _extra_chapters.items():
+            chapter_id = -int(int(keys.split(',')[0])) + 5000
+            chapters[chapter_id] = Chapter(name=name, description='', stories=[])
+            for key in keys.split(','):
+                id_mapping[key] = chapter_id
         for chapter in self.chapters:
             chapters[chapter.id] = Chapter(
                 name=chapter.name,
+                description=chapter.chapter,
                 stories=[],
             )
-            id_mapping[chapter.story_campaign_id] = chapter.id
+            for campaign_id in chapter.story_campaign_id.split(','):
+                id_mapping[campaign_id] = chapter.id
         for story in sorted(self.main_events, key=lambda e: e.id):
+            files = self._parse_event_stories(story)
+            if len(files) == 0:
+                continue
+            if story.campaign == -43: # 暗金潮命名有问题
+                story.title, story.description = story.description, story.title
             campaign = str(story.campaign)
             if campaign not in id_mapping:
                 auto_id = 10000
-                if int(campaign) > 0:
-                    auto_id += int(campaign)
+                if story.campaign > 0:
+                    auto_id += story.campaign
                 else:
-                    auto_id += 10000 + (-int(campaign))
+                    auto_id += 10000 + (-story.campaign)
                 id_mapping[campaign] = auto_id
                 chapters[auto_id] = Chapter(
                     name=f'未知: {story.title}',
+                    description='未能解析活动名称',
                     stories=[],
                 )
-            if story.scripts.strip() == '':
-                continue
             chapters[id_mapping[campaign]].stories.append(Story(
-                name=story.title,
+                name=files[0] if story.title == '' else story.title,
                 description=story.description,
-                files=[f'{s.strip().lower()}.txt' for s in story.scripts.split(',')],
+                files=files,
             ))
         return [v for _, v in sorted(chapters.items(), key=lambda e: e[0])]
 
@@ -171,6 +208,7 @@ class Chapters:
         for chapter in self.bonding_chapters:
             chapters[chapter.id] = Chapter(
                 name=chapter.name,
+                description='',
                 stories=[],
             )
         for story in sorted(self.bonding_events, key=lambda e: e.id):
@@ -191,6 +229,7 @@ class Chapters:
             if gun_id not in chapters:
                 chapters[gun_id] = Chapter(
                     name=guns[gun_id]['name'],
+                    description='',
                     stories=[],
                 )
             chapters[gun_id].stories.append(Story(

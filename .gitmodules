@@ -1,3 +1,6 @@
 [submodule "unpack/downloader"]
 	path = unpack/downloader
 	url = https://github.com/gf-data-tools/gf-resource-downloader.git
+[submodule "unpack/gf-data-ch"]
+	path = unpack/gf-data-ch
+	url = https://github.com/gf-data-tools/gf-data-ch.git

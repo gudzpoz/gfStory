@@ -191,6 +191,8 @@ class StoryTranspiler:
 class Stories:
     directory: pathlib.Path
 
+    gf_data_directory: pathlib.Path
+
     destination: pathlib.Path
 
     resource_file: pathlib.Path
@@ -199,7 +201,7 @@ class Stories:
 
     extracted: dict[str, pathlib.Path]
 
-    def __init__(self, directory: str, destination: str, root_destination: str | None = None) -> None:
+    def __init__(self, directory: str, destination: str, *, gf_data_directory: str | None = None, root_destination: str | None = None) -> None:
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(destination, create=True)
         self.resource_file = list(self.directory.glob('*assettextavg.ab'))[0]
@@ -209,7 +211,9 @@ class Stories:
             root.joinpath('images', 'backgrounds.json'),
             root.joinpath('images', 'characters.json'),
         )
+        self.gf_data_directory = root.joinpath('gf-data-ch') if gf_data_directory is None else pathlib.Path(gf_data_directory)
         self.extracted = self.extract_all()
+        self.copy_missing_pieces()
 
     def extract_all(self):
         assets = UnityPy.load(str(self.resource_file))
@@ -232,6 +236,19 @@ class Stories:
                 f.write(self.transpiler.decode(content, name))
             extracted[name] = path
         return extracted
+
+    def copy_missing_pieces(self):
+        directory = utils.check_directory(self.gf_data_directory.joinpath('asset', 'avgtxt'))
+        for file in directory.glob('**/*.txt'):
+            rel = file.relative_to(directory)
+            name = str(rel)
+            if name not in self.extracted:
+                _warning('filling in %s', name)
+                path = self.destination.joinpath(rel)
+                with path.open('w') as f:
+                    with file.open() as content:
+                        f.write(self.transpiler.decode(content.read(), name))
+                self.extracted[name] = path
 
     def save(self):
         path = self.destination.joinpath('stories.json')

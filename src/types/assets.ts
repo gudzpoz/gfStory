@@ -50,6 +50,7 @@ export type Story = {
 };
 export type Chapter = {
   name: string;
+  description: string;
   stories: Story[];
 };
 export type GfChaptersInfo = Record<ChapterType, Chapter[]>;
