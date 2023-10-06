@@ -134,7 +134,6 @@ class StoryTranspiler:
         if filename in ['avgplaybackprofiles.txt', 'profiles.txt']:
             return script
         markdown: list[str] = []
-        remote_characters: dict[str, str] = {}
         characters: dict[str, dict[int, str]] = {}
         for line in script.split('\n'):
             line = line.strip()
@@ -173,10 +172,8 @@ class StoryTranspiler:
             content, options = options[0], options[1:]
             content = self._convert_content(content)
             sprite_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites)
-            remote_characters.update((character, '')
-                                     for character, _, attrs in sprites if '通讯框' in attrs)
             remote_string = '|'.join(f'{character}/{sprite}'
-                                     for character, sprite, _ in sprites if character in remote_characters)
+                                     for character, sprite, attrs in sprites if '通讯框' in attrs)
             if '分支' in effects:
                 branching = f'`branch == {effects["分支"]}` '
             else:
