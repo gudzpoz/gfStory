@@ -132,14 +132,15 @@ class StoryTranspiler:
         serialized = json.dumps(json.dumps(character_list, ensure_ascii=False), ensure_ascii=False)
         return f'```lua global\nprint.defineCharacters({serialized})\n```\n\n';
     
-    def _generate_bg_line(self, bg: str, filename: str):
+    def _generate_bg_line(self, bg: str, effects: dict[str, str], filename: str):
         if bg == '':
             _warning('invalid bg in %s', filename)
         bg_path = self.backgrounds.get(bg)
         if bg_path is None or bg_path == '':
             _warning('background not found for `%s` in %s', bg, filename)
             bg_path = f'background/{bg}.png'
-        return f':background[] /images/{bg_path}'
+        night = 'night' if 'night' in effects else '!night'
+        return f':background[] :classes[{night}] /images/{bg_path}'
 
     def decode(self, script: str, filename: str):
         if filename in ['avgplaybackprofiles.txt', 'profiles.txt']:
@@ -162,7 +163,7 @@ class StoryTranspiler:
             sprites, speaker = self._parse_narrators(narrator_string)
             effects = self._parse_effects(effect_string)
             if 'bin' in effects:
-                markdown.append(self._generate_bg_line(effects['bin'], filename))
+                markdown.append(self._generate_bg_line(effects['bin'], effects, filename))
             if 'bgm' in effects:
                 bgm = self.audio.get(effects['bgm'], f'bgm/{effects["bgm"]}.m4a')
                 markdown.append(f':audio[] /audio/{bgm}')
@@ -174,7 +175,7 @@ class StoryTranspiler:
                 for i, cg in enumerate(effects['cg'].split(','), 1):
                     if cg.strip() == '':
                         continue
-                    markdown.append(self._generate_bg_line(cg.strip(), filename))
+                    markdown.append(self._generate_bg_line(cg.strip(), effects, filename))
                     markdown.append('……' * i)
             if '黑屏1' in effects or '黑屏2' in effects:
                 pass

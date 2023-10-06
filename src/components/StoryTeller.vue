@@ -22,7 +22,8 @@ const emit = defineEmits<{
 const story = new StoryInterpreter();
 let backgroundMusic: HTMLAudioElement | null = null;
 const background = ref('');
-const style = ref<'contain' | 'cover'>('cover');
+const classes = ref<string[]>([]);
+const style = ref<string>('cover');
 const narrator = ref('');
 const narratorColor = ref('');
 const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}">${narrator.value}</span>`);
@@ -35,6 +36,51 @@ function toText(s: string) {
   return s.trim().replace(/\\/g, '');
 }
 
+function updateClasses(classString: string) {
+  const classUpdates = classString.split(' ').map((s) => s.trim()).filter((s) => s !== '');
+  const newClasses = classes.value.concat(classUpdates.filter((s) => !s.startsWith('!')));
+  classUpdates.filter((s) => s.startsWith('!')).forEach((s) => {
+    const name = s.substring(1);
+    const i = newClasses.indexOf(name);
+    if (i !== -1) {
+      newClasses.splice(i, 1);
+    }
+  });
+  classes.value = newClasses;
+}
+
+function updateAudio(audio: string) {
+  if (backgroundMusic !== null) {
+    backgroundMusic.pause();
+    backgroundMusic = null;
+  }
+  if (audio !== '') {
+    backgroundMusic = new Audio(audio);
+    backgroundMusic.loop = true;
+    backgroundMusic.play();
+  }
+}
+
+function playAudio(audio: string) {
+  const sePlayer = new Audio(audio);
+  sePlayer.loop = false;
+  sePlayer.play();
+}
+
+function updateLine(line: string, tags: Record<string, string>) {
+  narrator.value = toText(tags.narrator ?? '');
+  narratorColor.value = tags.color ?? '';
+  if (tags.sprites !== undefined) {
+    sprites.value = tags.sprites.split('|').map(toText)
+      .map((s) => (s === '' ? null : story.getImage(s)))
+      .filter((s) => s) as SpriteImage[];
+  }
+  if (tags.remote !== undefined) {
+    remote.value = new Set(tags.remote.split('|').map(toText));
+  }
+  text.value = line;
+}
+
 function nextLine(option?: number) {
   let line = story.next(option);
   while (line) {
@@ -44,40 +90,20 @@ function nextLine(option?: number) {
     }
     options.value = [];
 
+    if (line.tags.classes) {
+      updateClasses(line.tags.classes);
+    }
+
     if (line.tags.background !== undefined) {
       background.value = toText(line.text);
       const display = line.tags.background.trim();
-      if (display === 'cover' || display === 'contain') {
-        style.value = display;
-      }
+      style.value = display;
     } else if (line.tags.se !== undefined) {
-      const audio = toText(line.text);
-      const sePlayer = new Audio(audio);
-      sePlayer.loop = false;
-      sePlayer.play();
+      playAudio(toText(line.text));
     } else if (line.tags.audio !== undefined) {
-      const audio = toText(line.text);
-      if (backgroundMusic !== null) {
-        backgroundMusic.pause();
-        backgroundMusic = null;
-      }
-      if (audio !== '') {
-        backgroundMusic = new Audio(audio);
-        backgroundMusic.loop = true;
-        backgroundMusic.play();
-      }
+      updateAudio(toText(line.text));
     } else {
-      narrator.value = toText(line.tags.narrator ?? '');
-      narratorColor.value = line.tags.color ?? '';
-      if (line.tags.sprites !== undefined) {
-        sprites.value = line.tags.sprites.split('|').map(toText)
-          .map((s) => (s === '' ? null : story.getImage(s)))
-          .filter((s) => s) as SpriteImage[];
-      }
-      if (line.tags.remote !== undefined) {
-        remote.value = new Set(line.tags.remote.split('|').map(toText));
-      }
-      text.value = line.text;
+      updateLine(line.text, line.tags);
       return;
     }
     line = story.next();
@@ -118,6 +144,7 @@ onUnmounted(() => {
   <story-scene
     :background-url="background"
     :background-style="style"
+    :classes="classes"
     :narrator-html="narratorHtml"
     :sprites="sprites"
     :remote="remote"

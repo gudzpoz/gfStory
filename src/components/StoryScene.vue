@@ -19,7 +19,8 @@ const boxLayerSvgUrl = `url("${
 
 const props = defineProps<{
   backgroundUrl: string,
-  backgroundStyle: 'contain' | 'cover',
+  backgroundStyle: 'contain' | 'cover' | string,
+  classes: string[],
   narratorHtml: string,
   sprites: SpriteImage[],
   options: StoryOption[],
@@ -61,13 +62,16 @@ function computeCenter(i: number) {
 </script>
 
 <template>
-  <div class="story-background">
+  <div class="story-background" :class="classes">
     <div class="button-slot">
       <slot></slot>
     </div>
     <img v-show="backgroundUrl.endsWith('/') ? '' : backgroundUrl"
       :src="backgroundUrl"
-      :style="{ objectFit: backgroundStyle }"
+      :style="(backgroundStyle == 'contain' || backgroundStyle == 'cover')
+        ? { objectFit: backgroundStyle }
+        : backgroundStyle
+      "
     />
     <div ref="backgroundSpace" class="story"
       @click="emitClick"
@@ -107,13 +111,6 @@ function computeCenter(i: number) {
 
 <style>
 @import url('https://fonts.font.im/css2?family=Noto+Sans+SC&display=swap');
-
-.story-background, .story {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
 
 .story-background .button-slot {
   position: absolute;
@@ -156,15 +153,22 @@ function computeCenter(i: number) {
 
 .story-background > img {
   position: absolute;
+  z-index: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 .story-background > img[src=""] {
   opacity: 0;
 }
 
-.story {
+.story-background, .story {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   filter: drop-shadow(1px 1px 3px black);
+  z-index: 2;
 }
 
 .sprites {
@@ -278,5 +282,12 @@ function computeCenter(i: number) {
   background: linear-gradient(0.25turn, #ccca 0, #ccca 18px, #fdb300c0 19px);
   clip-path: polygon(0 0, 25px 25px, 100% 25px, 100% 0);
   box-shadow: 0 0 2px black;
+}
+
+.night.story-background {
+  background-color: #00f8;
+}
+.night.story-background > img {
+  mix-blend-mode: multiply;
 }
 </style>

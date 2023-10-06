@@ -13,6 +13,8 @@ export interface StoryLine {
   text: string;
   select?: StoryOption[];
   tags: {
+    classes?: string,
+
     narrator?: string,
     color?: string,
 
