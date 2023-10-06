@@ -66,13 +66,15 @@ function computeCenter(i: number) {
     <div class="button-slot">
       <slot></slot>
     </div>
-    <img v-show="backgroundUrl.endsWith('/') ? '' : backgroundUrl"
-      :src="backgroundUrl"
-      :style="(backgroundStyle == 'contain' || backgroundStyle == 'cover')
-        ? { objectFit: backgroundStyle }
-        : backgroundStyle
-      "
-    />
+    <div class="background-image">
+      <img v-show="backgroundUrl.endsWith('/') ? '' : backgroundUrl"
+        :src="backgroundUrl"
+        :style="(backgroundStyle == 'contain' || backgroundStyle == 'cover')
+          ? { objectFit: backgroundStyle }
+          : backgroundStyle
+        "
+      />
+    </div>
     <div ref="backgroundSpace" class="story"
       @click="emitClick"
       @mousedown="setDownPosition"
@@ -151,14 +153,14 @@ function computeCenter(i: number) {
   padding-right: 3px;
 }
 
-.story-background > img {
+.story-background .background-image, .story-background > .background-image > img {
   position: absolute;
   z-index: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.story-background > img[src=""] {
+.story-background > .background-image > img[src=""] {
   opacity: 0;
 }
 
@@ -284,10 +286,31 @@ function computeCenter(i: number) {
   box-shadow: 0 0 2px black;
 }
 
-.night.story-background {
+/* All kinds of effects. */
+
+.night.story-background .background-image {
   background-color: #00f8;
 }
-.night.story-background > img {
+.night.story-background .background-image > img {
   mix-blend-mode: multiply;
+}
+
+.story-background .background-image {
+  transition: 0.5s opacity;
+}
+.blank.story-background .background-image {
+  opacity: 0;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in.story-background .background-image, .fade-in.story-background .sprites {
+  animation: fade-in 1s linear 0s 1;
 }
 </style>

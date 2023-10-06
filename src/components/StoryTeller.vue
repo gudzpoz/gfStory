@@ -41,9 +41,10 @@ function updateClasses(classString: string) {
   const newClasses = classes.value.concat(classUpdates.filter((s) => !s.startsWith('!')));
   classUpdates.filter((s) => s.startsWith('!')).forEach((s) => {
     const name = s.substring(1);
-    const i = newClasses.indexOf(name);
-    if (i !== -1) {
+    let i = newClasses.indexOf(name);
+    while (i !== -1) {
       newClasses.splice(i, 1);
+      i = newClasses.indexOf(name);
     }
   });
   classes.value = newClasses;
@@ -122,10 +123,14 @@ async function updateStory(chunk?: string) {
     return;
   }
   background.value = '';
+  style.value = 'cover';
+  classes.value = [];
   sprites.value = [];
+  remote.value = new Set();
   narrator.value = '';
   narratorColor.value = '';
   text.value = '';
+  options.value = [];
   backgroundMusic?.pause();
   backgroundMusic = null;
   await story.reload(s);

@@ -149,7 +149,22 @@ class StoryTranspiler:
         markdown: list[str] = []
         characters: dict[str, dict[int, str]] = {}
         remote_narrators: set[str] = set()
+        classes: set[str] = set()
+        class_updates: set[str] = set()
+        def update_class(c: str, state: bool):
+            nonlocal classes, class_updates
+            if state:
+                classes.add(c)
+                class_updates.add(c)
+            else:
+                if c in classes:
+                    classes.remove(c)
+                    class_updates.add(f'!{c}')
+
         for line in script.split('\n'):
+            class_updates = set()
+            # 大致行格式：
+            # 角色1;角色二;……||演出信息: 第一行+第二行+……
             line = line.strip()
             if line == '':
                 continue
@@ -162,9 +177,12 @@ class StoryTranspiler:
                 _warning('unrecognized line metadata `%s` in %s', line, filename)
                 continue
             narrator_string, effect_string = metadata.split('||', 1)
+
+            # 在角色信息和演出信息里都会有类似 <BIN> 这种信息来记录对应的程序效果
             sprites, speaker = self._parse_narrators(narrator_string)
             effects = self._parse_effects(effect_string)
             if 'bin' in effects:
+                update_class('blank', False)
                 markdown.append(self._generate_bg_line(effects['bin'], effects, filename))
             if 'bgm' in effects:
                 bgm = self.audio.get(effects['bgm'], f'bgm/{effects["bgm"]}.m4a')
@@ -174,20 +192,45 @@ class StoryTranspiler:
                 se = self.audio.get(se, f'se/{se}.m4a')
                 markdown.append(f':se[] /audio/{se}')
             if 'cg' in effects:
+                update_class('blank', False)
                 for i, cg in enumerate(effects['cg'].split(','), 1):
                     if cg.strip() == '':
                         continue
                     markdown.append(self._generate_bg_line(cg.strip(), effects, filename))
                     markdown.append('……' * i)
-            if '黑屏1' in effects or '黑屏2' in effects:
-                pass
-            options = content.split('<c>')
-            content, options = options[0], options[1:]
+            # 没猜错的和，这两个都是永久性黑屏，直至新的背景出现
+            if '黑屏1' in effects or '黑点1' in effects:
+                update_class('blank', True)
+            # 没猜错的和，这两个都是暂时性黑屏，一定时间后消失
+            # 但的确不知道黑屏会不会挡住角色
+            if '黑屏2' in effects or '黑点2' in effects:
+                update_class('blank', False)
+                update_class('fade-in', True)
+            else:
+                update_class('fade-in', False)
+
+            # 目前出现了三种选项：
+            # cg: 点击屏幕 CG 的对应地方进行选择，我们直接不处理了，依次显示所有选项
+            # c: 最简单的单次选项
+            # t: 重复选项，走完一个分支会返回来继续选……暂时也不处理
+            option_type = ''
+            options = []
+            if '<cg>' in content:
+                content = content.split('<cg>')[0]
+                markdown.append('`branch = 0`')
+            elif '<c>' in content:
+                options = content.split('<c>')
+                content, options = options[0], options[1:]
+                option_type = 'c'
+            elif '<t>' in content:
+                options = content.split('<t>')
+                content, options = options[0], options[1:]
+                option_type = 't'
             sprite_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites)
             remote_narrators = set(character for character, _, attrs in sprites if '通讯框' in attrs or character in remote_narrators)
             remote_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites if character in remote_narrators)
             if '分支' in effects:
-                branching = f'`branch == {effects["分支"]}` '
+                branching = f'`branch == 0 or branch == {effects["分支"]}` '
             else:
                 branching = ''
             for character, sprite, _ in sprites:
@@ -195,11 +238,15 @@ class StoryTranspiler:
                     characters[character] = {}
                 characters[character][sprite] = ''
 
-            tags = f'{branching} :sprites[{sprite_string}] :remote[{remote_string}] :narrator[{speaker}] :color[#fff]'
+            classes_string = '' if len(class_updates) == 0 else f':classes[{" ".join(class_updates)}] '
+            tags = f'{branching}{classes_string}:sprites[{sprite_string}] :remote[{remote_string}] :narrator[{speaker}] :color[#fff]'
             markdown.extend(self._convert_content(content, tags))
+
             if len(options) != 0:
                 for i, option in enumerate(options, 1):
                     markdown.append(f'- {self._convert_content(option)}\n\n  `branch = {i}`')
+                if option_type == 't':
+                    markdown.append('`branch = 0`')
         return self._inject_lua_scripts(characters) + '\n\n'.join(markdown)
 
 
