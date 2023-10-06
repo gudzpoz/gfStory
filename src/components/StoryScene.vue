@@ -53,11 +53,10 @@ function emitClick(event: MouseEvent) {
 }
 
 const backgroundSpace = ref<HTMLDivElement>();
-
 function computeCenter(i: number) {
   const div = backgroundSpace.value!;
-  const unit = div.clientWidth / props.sprites.length / 2;
-  return (2 * i + 1) * unit;
+  const unit = div.clientWidth / (props.sprites.length + 1);
+  return (i + 1) * unit;
 }
 </script>
 
@@ -101,7 +100,7 @@ function computeCenter(i: number) {
           <div class="narrator" v-html="narratorHtml"></div>
           <div class="narrator-corner"></div>
         </div>
-        <div class="text" :style="{ height: textHeight ?? '6em' }" v-html="textHtml"></div>
+        <div class="text" :style="{ height: textHeight ?? '5em' }" v-html="textHtml"></div>
         <div class="corner">
           <span class="loaded-circle" v-html="circleSvg" />
           <span v-html="gfSystemSvg" />
@@ -220,11 +219,11 @@ function computeCenter(i: number) {
   position: absolute;
   bottom: 0;
   min-width: 300px;
-  min-height: 12em;
+  min-height: 6em;
   margin: auto;
   margin-bottom: 2em;
   width: calc(100% - 2em);
-  max-width: 50em;
+  max-width: 42em;
   left: 0;
   right: 0;
 
@@ -242,6 +241,11 @@ function computeCenter(i: number) {
   right: 0;
   bottom: 0;
   padding: 0 7px 0 0;
+}
+@media (max-height: 20rem) {
+  .dialog {
+    font-size: 0.8em;
+  }
 }
 
 .dialog .text {

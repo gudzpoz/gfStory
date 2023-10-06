@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue';
+
 import type { SpriteImage } from '../../story/interpreter';
 
 const props = defineProps<{
@@ -8,9 +10,9 @@ const props = defineProps<{
   framed?: boolean,
 }>();
 
-const idealHeightRatio = 0.8;
+const idealHeightRatio = 1;
 const idealWHRatio = 11 / 16;
-const idealCenterTop = 0.45;
+const idealCenterTop = 0.70;
 
 function computeImageProperties() {
   const { sprite } = props;
@@ -44,10 +46,27 @@ ${idealWidth - left}px ${idealHeight - top}px, ${-left}px ${idealHeight - top}px
   ];
 }
 
-const [
-  boxWidth, boxHeight, width, height,
-  boxLeft, boxTop, left, top, clipPath,
-] = computeImageProperties();
+const boxWidth = ref(0);
+const boxHeight = ref(0);
+const width = ref(0);
+const height = ref(0);
+const boxLeft = ref(0);
+const boxTop = ref(0);
+const left = ref(0);
+const top = ref(0);
+const clipPath = ref('');
+
+function updateImageProperties() {
+  const properties = computeImageProperties();
+  clipPath.value = properties[7] as string;
+  [
+    boxWidth.value, boxHeight.value, width.value, height.value,
+    boxLeft.value, boxTop.value, left.value, top.value,
+  ] = properties as number[];
+}
+updateImageProperties();
+onMounted(() => window.addEventListener('resize', updateImageProperties));
+onUnmounted(() => window.removeEventListener('resize', updateImageProperties));
 </script>
 
 <template>
