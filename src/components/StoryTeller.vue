@@ -6,7 +6,7 @@ import {
 import { MenuFilled } from '@vicons/material';
 
 import StoryScene from './StoryScene.vue';
-import { StoryInterpreter, type SpriteImage } from '../story/interpreter';
+import { StoryInterpreter, type SpriteImage, type StoryOption } from '../story/interpreter';
 
 const props = defineProps<{
   chunk?: string,
@@ -29,14 +29,21 @@ const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}"
 const sprites = ref<SpriteImage[]>([]);
 const remote = ref<Set<string>>(new Set<string>());
 const text = ref('');
+const options = ref<StoryOption[]>([]);
 
 function toText(s: string) {
   return s.trim().replace(/\\/g, '');
 }
 
-function nextLine() {
-  let line = story.next();
+function nextLine(option?: number) {
+  let line = story.next(option);
   while (line) {
+    if (line.select) {
+      options.value = line.select;
+      return;
+    }
+    options.value = [];
+
     if (line.tags.background !== undefined) {
       background.value = toText(line.text);
       const display = line.tags.background.trim();
@@ -115,7 +122,9 @@ onUnmounted(() => {
     :sprites="sprites"
     :remote="remote"
     :text-html="text"
+    :options="options"
     @click="nextLine"
+    @choose="(v) => nextLine(v)"
   >
     <button v-if="menuButton" @click="emit('menu')">
       <menu-filled></menu-filled><span>菜单</span>

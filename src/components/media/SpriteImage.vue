@@ -87,6 +87,7 @@ const [
   transform: translateX(-50%);
   overflow: visible;
   position: absolute;
+  user-select: none;
 }
 .sprite .sprite-frame {
   position: absolute;

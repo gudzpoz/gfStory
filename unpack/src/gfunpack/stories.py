@@ -169,22 +169,32 @@ class StoryTranspiler:
                 markdown.append(f':se[] /audio/{se}')
             if '黑屏1' in effects or '黑屏2' in effects:
                 pass
+            options = content.split('<c>')
+            content, options = options[0], options[1:]
             content = self._convert_content(content)
             sprite_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites)
             remote_characters.update((character, '')
                                      for character, _, attrs in sprites if '通讯框' in attrs)
             remote_string = '|'.join(f'{character}/{sprite}'
                                      for character, sprite, _ in sprites if character in remote_characters)
+            if '分支' in effects:
+                branching = f'`branch == {effects["分支"]}` '
+            else:
+                branching = ''
             for character, sprite, _ in sprites:
                 if character not in characters:
                     characters[character] = {}
                 characters[character][sprite] = ''
-            markdown.append(f'\
+
+            markdown.append(f'{branching}\
 :sprites[{sprite_string}] \
 :remote[{remote_string}] \
 :narrator[{speaker}] \
 :color[#fff] \
 {content}')
+            if len(options) != 0:
+                for i, option in enumerate(options, 1):
+                    markdown.append(f'- {self._convert_content(option)}\n\n  `branch = {i}`')
         return self._inject_lua_scripts(characters) + '\n\n'.join(markdown)
 
 

@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 
 import SpriteImageView from './media/SpriteImage.vue';
-import type { SpriteImage } from '../story/interpreter';
+import type { SpriteImage, StoryOption } from '../story/interpreter';
 
 // eslint-disable-next-line import/no-unresolved
 import circleSvg from '../assets/circle.svg?raw';
@@ -22,6 +22,7 @@ const props = defineProps<{
   backgroundStyle: 'contain' | 'cover',
   narratorHtml: string,
   sprites: SpriteImage[],
+  options: StoryOption[],
   remote: Set<string>,
   textHtml: string,
   textHeight?: string,
@@ -30,6 +31,7 @@ const props = defineProps<{
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
   (event: 'click'): void,
+  (event: 'choose', option: number): void,
 }>();
 let clickX = 0;
 let clickY = 0;
@@ -38,6 +40,9 @@ function setDownPosition(event: MouseEvent) {
   clickY = event.clientY;
 }
 function emitClick(event: MouseEvent) {
+  if (props.options.length > 0) {
+    return;
+  }
   const dx = clickX - event.clientX;
   const dy = clickY - event.clientY;
   const distance = dx * dx + dy * dy;
@@ -79,6 +84,12 @@ function computeCenter(i: number) {
         >
         </sprite-image-view>
       </transition-group>
+      <div class="options" v-show="options.length > 0">
+        <button v-html="option.option" v-for="option in options" :key="option.option"
+          @click="emit('choose', option.key)"
+        >
+        </button>
+      </div>
       <div class="dialog">
         <div class="narrator-box">
           <div class="narrator" v-html="narratorHtml"></div>
@@ -158,6 +169,45 @@ function computeCenter(i: number) {
 
 .sprites {
   --box-border-image-source: v-bind(boxLayerSvgUrl);
+}
+
+.story .options {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  width: 100%;
+  height: calc(100% - 10em);
+  z-index: 3;
+  filter: drop-shadow(1px 1px 2px #000);
+}
+.story .options button {
+  position: relative;
+  display: block;
+  margin: 5px;
+  line-height: 1em;
+  width: 75vw;
+  max-width: 42em;
+  background-color: #0006;
+  color: white;
+  border: 1px solid #fdb300c0;
+}
+.story .options button::before {
+  position: absolute;
+  content: "";
+  text-align: left;
+  width: 5px;
+  height: 5px;
+  left: 5px;
+  top: 5px;
+  background-color: #fdb300c0;
+}
+.story .options button:hover {
+  background-color: #000a;
+}
+.story .options button:active {
+  background-color: #000f;
 }
 
 .dialog {

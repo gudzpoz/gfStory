@@ -8,8 +8,10 @@ const {
   js, lauxlib, lua, lualib, to_luastring, tojs,
 } = fengari;
 
+export type StoryOption = { option: string, key: number };
 export interface StoryLine {
   text: string;
+  select?: StoryOption[];
   tags: {
     narrator?: string,
     color?: string,
