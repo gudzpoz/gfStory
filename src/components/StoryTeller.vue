@@ -30,22 +30,26 @@ const sprites = ref<SpriteImage[]>([]);
 const remote = ref<Set<string>>(new Set<string>());
 const text = ref('');
 
+function toText(s: string) {
+  return s.trim().replace(/\\/g, '');
+}
+
 function nextLine() {
   let line = story.next();
   while (line) {
     if (line.tags.background !== undefined) {
-      background.value = line.text.trim().replace(/\\/g, '');
+      background.value = toText(line.text);
       const display = line.tags.background.trim();
       if (display === 'cover' || display === 'contain') {
         style.value = display;
       }
     } else if (line.tags.se !== undefined) {
-      const audio = line.text.trim().replace(/\\/g, '');
+      const audio = toText(line.text);
       const sePlayer = new Audio(audio);
       sePlayer.loop = false;
       sePlayer.play();
     } else if (line.tags.audio !== undefined) {
-      const audio = line.text.trim().replace(/\\/g, '');
+      const audio = toText(line.text);
       if (backgroundMusic !== null) {
         backgroundMusic.pause();
         backgroundMusic = null;
@@ -56,17 +60,15 @@ function nextLine() {
         backgroundMusic.play();
       }
     } else {
-      narrator.value = line.tags.narrator ?? '';
+      narrator.value = toText(line.tags.narrator ?? '');
       narratorColor.value = line.tags.color ?? '';
       if (line.tags.sprites !== undefined) {
-        sprites.value = line.tags.sprites.split('|')
-          .map((s) => s.trim().replace(/\\/g, ''))
+        sprites.value = line.tags.sprites.split('|').map(toText)
           .map((s) => (s === '' ? null : story.getImage(s)))
           .filter((s) => s) as SpriteImage[];
       }
       if (line.tags.remote !== undefined) {
-        remote.value = new Set(line.tags.remote.split('|')
-          .map((s) => s.trim().replace(/\\/g, '')));
+        remote.value = new Set(line.tags.remote.split('|').map(toText));
       }
       text.value = line.text;
       return;

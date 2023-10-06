@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import {
-  NButton, NDrawer, NDrawerContent,
-  NInput, NTree,
-  type TreeOption,
+  NDrawer, NDrawerContent,
+  NMenu, NTreeSelect,
+  type MenuInst, type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
-import { h, ref } from 'vue';
+import { ref, watch } from 'vue';
 
 import StoryTeller from './components/StoryTeller.vue';
 import { compileMarkdown } from './story/compiler';
@@ -25,19 +25,14 @@ function switchStory(path: string) {
 }
 
 const showMenu = ref(false);
-const menuSearch = ref('');
-function generateLeafOption(key: string, label: string, story: string): TreeOption {
+function generateLeafOption(key: string, label: string)
+  : MenuOption & TreeSelectOption {
   return {
     key,
     label,
-    prefix: () => h(
-      NButton,
-      { onClick: () => switchStory(`${STORY_PATH_PREFIX}${story}`) },
-      { default: () => '选择' },
-    ),
   };
 }
-function generateChapterOption(label: ChapterType, name: string): TreeOption {
+function generateChapterOption(label: ChapterType, name: string): MenuOption & TreeSelectOption {
   const chapters = chapterPresets[label];
   return {
     key: label,
@@ -51,33 +46,43 @@ function generateChapterOption(label: ChapterType, name: string): TreeOption {
           return { key, label: story.name };
         }
         if (story.files.length === 1) {
-          return generateLeafOption(key, story.name, story.files[0]);
+          return generateLeafOption(`${key}|${story.files[0]}`, story.name);
         }
         return {
           key,
           label: story.name,
-          children: story.files.map((file, k) => generateLeafOption(`${key}/${file}`, `阶段 ${k}`, file)),
+          children: story.files.map((file, k) => generateLeafOption(`${key}|${file}`, `阶段 ${k}`)),
         };
       }),
     })),
   };
 }
-const data: TreeOption[] = [
+const data: (MenuOption & TreeSelectOption)[] = [
   generateChapterOption('main', '主线支线活动故事'),
   generateChapterOption('upgrading', '心智升级故事'),
   generateChapterOption('bonding', '格里芬往事'),
 ];
+const value = ref('');
+const menu = ref<MenuInst>();
+watch(() => value.value, (v) => {
+  menu.value?.showOption(v);
+  if (v.includes('|')) {
+    const [, file] = v.split('|');
+    switchStory(`${STORY_PATH_PREFIX}${file}`);
+  }
+});
 </script>
 
 <template>
-  <n-drawer v-model:show="showMenu" :width="500" placement="left">
-    <n-drawer-content title="剧情选择">
-      <n-input v-model:value="menuSearch" placeholder="搜索"></n-input>
-      <n-tree :pattern="menuSearch" :data="data"
-        virtual-scroll
-        :show-irrelevant-nodes="false"
+  <n-drawer v-model:show="showMenu" :width="300" max-width="80vw" placement="left"
+    display-directive="show"
+  >
+    <n-drawer-content title="剧情选择" :native-scrollbar="false">
+      <n-tree-select :options="data" v-model:value="value"
+        placeholder="搜索" filterable show-path
       >
-      </n-tree>
+      </n-tree-select>
+      <n-menu ref="menu" :options="data" v-model:value="value" accordion></n-menu>
     </n-drawer-content>
   </n-drawer>
   <story-teller menu-button @menu="showMenu = true" :chunk="chunk"></story-teller>
