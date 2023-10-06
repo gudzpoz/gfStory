@@ -29,7 +29,7 @@ class ChapterInfo:
     chapter: str = '0'
 
 
-_extra_chapters =  {
+_extra_chapters = {
     '-8': '猎兔行动',
     '-14,-15': '独法师',
     '-19,-20,-22': '荣耀日',
@@ -38,6 +38,18 @@ _extra_chapters =  {
     '-43': '暗金潮',
     '-46': '小邪神前线',
     '-57': '雪浪映花颜',
+}
+_extra_stories = {
+    '-32': {
+        '迪奥杜里管吹奏指南-调酒': 'va11/va11_1.txt',
+        '青春期-调酒': 'va11/va11_2.txt',
+        '先驱者-调酒': 'va11/va11_3.txt',
+        '音爆-调酒': 'va11/va11_4.txt',
+        '鸡胸肉-调酒': 'va11/va11_5.txt',
+        '公众演讲恐惧症-调酒': 'va11/va11_6.txt',
+        '真心话大冒险-调酒': 'va11/va11_7.txt',
+        '世上的最后一场雨-调酒': 'va11/va11_8.txt',
+    },
 }
 
 
@@ -149,7 +161,7 @@ class Chapters:
         return [s.split(':')[1] for s in point.split(',') if s != '']
 
     @classmethod
-    def _parse_event_stories(cls, story: EventStoryInfo):
+    def _parse_event_stories(cls, story: EventStoryInfo, mapped_files: set[str]):
         scripts = [s.strip().lower() for s in story.scripts.split(',')]
         if story.first != '' and story.first not in scripts:
             scripts.insert(0, story.first)
@@ -159,12 +171,16 @@ class Chapters:
             scripts.extend(cls._parse_point_scripts(extra))
         if story.end != '' and story.end not in scripts:
             scripts.append(story.end)
-        return [f'{s.strip()}.txt' for s in scripts if s.strip() != '']
-        
+
+        all_files = [f'{s.strip()}.txt' for s in scripts if s.strip() != '']
+        filtered = [f for f in all_files if f not in mapped_files]
+        mapped_files.update(all_files)
+        return filtered
 
     def _categorize_main_stories(self):
         chapters: dict[int, Chapter] = {}
         id_mapping: dict[str, int] = {}
+        mapped_files: set[str] = set()
         for keys, name in _extra_chapters.items():
             chapter_id = -int(int(keys.split(',')[0])) + 5000
             chapters[chapter_id] = Chapter(name=name, description='', stories=[])
@@ -179,7 +195,7 @@ class Chapters:
             for campaign_id in chapter.story_campaign_id.split(','):
                 id_mapping[campaign_id] = chapter.id
         for story in sorted(self.main_events, key=lambda e: e.id):
-            files = self._parse_event_stories(story)
+            files = self._parse_event_stories(story, mapped_files)
             if len(files) == 0:
                 continue
             if story.campaign == -43: # 暗金潮命名有问题
@@ -202,6 +218,16 @@ class Chapters:
                 description=story.description,
                 files=files,
             ))
+        for chapter_str, stories in _extra_stories.items():
+            chapter_id = id_mapping[chapter_str]
+            chapter = chapters[chapter_id]
+            for name, file in stories.items():
+                if file not in mapped_files:
+                    chapter.stories.append(Story(
+                        name=name,
+                        description=file,
+                        files=[file],
+                    ))
         return [v for _, v in sorted(chapters.items(), key=lambda e: e[0])]
 
     def _categorize_bonding_stories(self):
@@ -249,10 +275,22 @@ class Chapters:
 
     def save(self):
         all_chapters: dict[str, list[dict]] = {}
+        all_file_list: list[str] = []
         for chapters in self.all_chapters.values():
             for chapter in chapters:
                 for story in chapter.stories:
                     story.files = [f for f in story.files if f in self.stories.extracted]
+                    all_file_list.extend(story.files)
+        all_files = set(all_file_list)
+        others = set(self.stories.extracted.keys()) - all_files
+        self.all_chapters['main'].append(Chapter(
+            name='未能归类',
+            description='程序未能自动归类的故事',
+            stories=[
+                Story(name=file, description='', files=[file])
+                for file in sorted(others)
+            ],
+        ))
         for k, chapters in self.all_chapters.items():
             chapter_dicts = [dataclasses.asdict(c) for c in chapters]
             all_chapters[k] = chapter_dicts
