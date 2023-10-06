@@ -17,7 +17,7 @@ _text_asset_regex = re.compile('^assets/resources/dabao/avgtxt/(.+.txt)$')
 
 _speaker_regex = re.compile('<speaker>(.*)</speaker>', re.IGNORECASE)
 _sprite_regex = re.compile('^([^()<>]*)\\((\\d*)\\)')
-_effect_tag_regex = re.compile('</?([^>]+)>')
+_effect_tag_regex = re.compile('</?([^<>]+)>')
 _line_replace_templates = [
     (
         re.compile('<color=(#\\w+)>', re.IGNORECASE),
@@ -41,12 +41,14 @@ class StoryTranspiler:
     audio: dict[str, str]
     backgrounds: dict[str, str]
     characters: dict[str, dict[str, mapper.SpriteDetails]]
+    tag_collection: set[str]
 
     def __init__(self, audio_json: pathlib.Path, background_json: pathlib.Path,
                  character_json: pathlib.Path) -> None:
         self.audio = json.load(audio_json.open())
         self.backgrounds = json.load(background_json.open())
         self.characters = json.load(character_json.open())
+        self.tag_collection = set()
         for character in self.characters.values():
             for k, sprite in character.items():
                 character[k] = mapper.SpriteDetails(**sprite)
@@ -64,8 +66,7 @@ class StoryTranspiler:
             for line in content.split('+')
         )
     
-    @classmethod
-    def _parse_narrators(cls, narrators: str):
+    def _parse_narrators(self, narrators: str):
         sprites: list[tuple[str, int, dict[str, str]]] = []
         speakers = []
         for narrator in narrators.split(';'):
@@ -80,12 +81,11 @@ class StoryTranspiler:
             if sprite.group(1) == '' or sprite.group(2) == '':
                 sprites.append(('', 0, {}))
             else:
-                attrs = cls._parse_effects(narrator)
+                attrs = self._parse_effects(narrator)
                 sprites.append((sprite.group(1), int(sprite.group(2)), attrs))
         return sprites, ' & '.join(speakers)
     
-    @classmethod
-    def _parse_effects(cls, effects: str):
+    def _parse_effects(self, effects: str):
         tags = re.findall(_effect_tag_regex, effects)
         parsed: dict[str, str] = dict((tag, '') for tag in tags)
         for tag in parsed.keys():
@@ -97,7 +97,9 @@ class StoryTranspiler:
                     parsed[tag] = effects[start + len(full_tag) : end]
                 except ValueError:
                     _warning('tag %s wrong in `%s`', tag, effects)
-        return dict((k.lower(), v) for k, v in parsed.items())
+        result = dict((k.lower(), v) for k, v in parsed.items())
+        self.tag_collection.update(result.keys())
+        return result
     
     def _get_sprite_info(self, character: str, sprite: int):
         c = self.characters.get(character)
@@ -129,6 +131,15 @@ class StoryTranspiler:
             })
         serialized = json.dumps(json.dumps(character_list, ensure_ascii=False), ensure_ascii=False)
         return f'```lua global\nprint.defineCharacters({serialized})\n```\n\n';
+    
+    def _generate_bg_line(self, bg: str, filename: str):
+        if bg == '':
+            _warning('invalid bg in %s', filename)
+        bg_path = self.backgrounds.get(bg)
+        if bg_path is None or bg_path == '':
+            _warning('background not found for `%s` in %s', bg, filename)
+            bg_path = f'background/{bg}.png'
+        return f':background[] /images/{bg_path}'
 
     def decode(self, script: str, filename: str):
         if filename in ['avgplaybackprofiles.txt', 'profiles.txt']:
@@ -151,14 +162,7 @@ class StoryTranspiler:
             sprites, speaker = self._parse_narrators(narrator_string)
             effects = self._parse_effects(effect_string)
             if 'bin' in effects:
-                bg = effects['bin']
-                if bg == '':
-                    _warning('invalid bg for `%s` in %s', metadata, filename)
-                bg_path = self.backgrounds.get(bg)
-                if bg_path is None or bg_path == '':
-                    _warning('background not found for `%s` in %s', bg, filename)
-                    bg_path = f'background/{bg}.png'
-                markdown.append(f':background[] /images/{bg_path}')
+                markdown.append(self._generate_bg_line(effects['bin'], filename))
             if 'bgm' in effects:
                 bgm = self.audio.get(effects['bgm'], f'bgm/{effects["bgm"]}.m4a')
                 markdown.append(f':audio[] /audio/{bgm}')
@@ -166,6 +170,12 @@ class StoryTranspiler:
                 se = effects.get('se1') or effects.get('se2') or ''
                 se = self.audio.get(se, f'se/{se}.m4a')
                 markdown.append(f':se[] /audio/{se}')
+            if 'cg' in effects:
+                for i, cg in enumerate(effects['cg'].split(','), 1):
+                    if cg.strip() == '':
+                        continue
+                    markdown.append(self._generate_bg_line(cg.strip(), filename))
+                    markdown.append('……' * i)
             if '黑屏1' in effects or '黑屏2' in effects:
                 pass
             options = content.split('<c>')
