@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import logging
+import re
 import typing
 
 import hjson
@@ -16,6 +17,8 @@ _bonding_chapter_file = 'fetter.hjson'
 _bonding_info_file = 'fetter_story.hjson'
 _gun_info_file = 'gun.hjson'
 _upgrade_info_file = 'mindupdate_story_info.hjson'
+
+_chapter_file_name_regex = re.compile('^(-?\\d+)-')
 
 
 T = typing.TypeVar('T')
@@ -156,7 +159,7 @@ class Chapters:
             assert isinstance(data, list)
             return [item_type(**item) for item in data]
 
-    @classmethod    
+    @classmethod
     def _parse_point_scripts(cls, point: str):
         return [s.split(':')[1] for s in point.split(',') if s != '']
 
@@ -171,11 +174,23 @@ class Chapters:
             scripts.extend(cls._parse_point_scripts(extra))
         if story.end != '' and story.end not in scripts:
             scripts.append(story.end)
-
-        all_files = [f'{s.strip()}.txt' for s in scripts if s.strip() != '']
+        all_files = [f'{s.strip().lower()}.txt' for s in scripts if s.strip() != '']
         filtered = [f for f in all_files if f not in mapped_files]
         mapped_files.update(all_files)
         return filtered
+    
+    @classmethod
+    def _unknown_chapter(cls, campaign: int, title: str):
+        auto_id = 10000
+        if campaign > 0:
+            auto_id += campaign
+        else:
+            auto_id += 10000 + (-campaign)
+        return auto_id, Chapter(
+            name=f'未知: {title}',
+            description='未能解析活动名称',
+            stories=[],
+        )
 
     def _categorize_main_stories(self):
         chapters: dict[int, Chapter] = {}
@@ -202,17 +217,8 @@ class Chapters:
                 story.title, story.description = story.description, story.title
             campaign = str(story.campaign)
             if campaign not in id_mapping:
-                auto_id = 10000
-                if story.campaign > 0:
-                    auto_id += story.campaign
-                else:
-                    auto_id += 10000 + (-story.campaign)
-                id_mapping[campaign] = auto_id
-                chapters[auto_id] = Chapter(
-                    name=f'未知: {story.title}',
-                    description='未能解析活动名称',
-                    stories=[],
-                )
+                chapter_id, chapter = self._unknown_chapter(story.campaign, story.title)
+                chapters[chapter_id], id_mapping[campaign] = chapter, chapter_id
             chapters[id_mapping[campaign]].stories.append(Story(
                 name=files[0] if story.title == '' else story.title,
                 description=story.description,
@@ -228,6 +234,23 @@ class Chapters:
                         description=file,
                         files=[file],
                     ))
+        others = set(self.stories.extracted.keys()) - mapped_files
+        for file in sorted(others):
+            if '/' in file:
+                continue
+            match = _chapter_file_name_regex.match(file)
+            if match is None:
+                continue
+            campaign = match.group(1)
+            if campaign not in id_mapping:
+                chapter_id, chapter = self._unknown_chapter(int(campaign), campaign)
+                chapters[chapter_id], id_mapping[campaign] = chapter, chapter_id
+            chapters[id_mapping[campaign]].stories.append(Story(
+                name=file,
+                description='',
+                files=[file],
+            ))
+
         return [v for _, v in sorted(chapters.items(), key=lambda e: e[0])]
 
     def _categorize_bonding_stories(self):
@@ -265,7 +288,7 @@ class Chapters:
                 files=[f'memoir/{story.scripts}.txt'],
             ))
         return [v for _, v in sorted(chapters.items(), key=lambda e: e[0])]
-        
+
     def categorize_stories(self):
         all_chapters: dict[str, list[Chapter]] = {}
         all_chapters['main'] = self._categorize_main_stories()
