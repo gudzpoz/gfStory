@@ -147,6 +147,7 @@ class StoryTranspiler:
             return script
         markdown: list[str] = []
         characters: dict[str, dict[int, str]] = {}
+        remote_narrators: set[str] = set()
         for line in script.split('\n'):
             line = line.strip()
             if line == '':
@@ -183,8 +184,8 @@ class StoryTranspiler:
             content, options = options[0], options[1:]
             content = self._convert_content(content)
             sprite_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites)
-            remote_string = '|'.join(f'{character}/{sprite}'
-                                     for character, sprite, attrs in sprites if '通讯框' in attrs)
+            remote_narrators = set(character for character, _, attrs in sprites if '通讯框' in attrs or character in remote_narrators)
+            remote_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites if character in remote_narrators)
             if '分支' in effects:
                 branching = f'`branch == {effects["分支"]}` '
             else:
