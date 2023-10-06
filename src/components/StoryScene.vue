@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 import SpriteImageView from './media/SpriteImage.vue';
 import type { SpriteImage, StoryOption } from '../story/interpreter';
@@ -58,6 +58,19 @@ function computeCenter(i: number) {
   const unit = div.clientWidth / (props.sprites.length + 1);
   return (i + 1) * unit;
 }
+
+onMounted(() => {
+  document.addEventListener('keypress', (e) => {
+    if (props.options.length > 0) {
+      return;
+    }
+    if (document.activeElement?.tagName === 'BODY') {
+      if (e.key === 'Enter' || e.key === ' ') {
+        emit('click');
+      }
+    }
+  });
+});
 </script>
 
 <template>
