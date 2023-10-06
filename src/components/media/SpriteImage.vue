@@ -131,23 +131,6 @@ const [
   background-size: 3px 3px;
   overflow: hidden;
 }
-@keyframes scan-line {
-  from, 20% {
-    top: -10%;
-  }
-  80%, to {
-    top: 110%;
-  }
-}
-.sprite .sprite-frame .frame-foreground::after {
-  display: block;
-  content: "";
-  position: absolute;
-  width: 100%;
-  height: 2px;
-  box-shadow: 0 1px 3px aqua, 0 -1px 3px aqua, 0 0 6px aqua inset;
-  animation: scan-line 15s linear 5s infinite;
-}
 
 .sprite img[src=""] {
   opacity: 0;
