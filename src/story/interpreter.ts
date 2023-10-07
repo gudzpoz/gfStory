@@ -34,6 +34,23 @@ export interface SpriteImage extends CharacterSprite {
   image: HTMLImageElement;
 }
 
+function fetchSpriteImage(character: string, s: CharacterSprite) {
+  const image = new Image();
+  return new Promise<[string, SpriteImage]>((resolve) => {
+    image.src = s.url;
+    const sprite = s as SpriteImage;
+    sprite.image = image;
+    const result = [`${character}/${s.name}`, sprite] as [string, SpriteImage];
+    image.onload = () => resolve(result);
+    image.onerror = () => {
+      if (image.src !== '') {
+        image.classList.add('failed');
+      }
+      resolve(result);
+    };
+  });
+}
+
 export class StoryInterpreter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   L: any;
@@ -101,23 +118,18 @@ export class StoryInterpreter {
 
   async preloadResources() {
     this.preloadedImages = {};
-    const images = this.characters.flatMap((c) => c.sprites.map((s) => {
-      const image = new Image();
-      return new Promise<[string, SpriteImage]>((resolve) => {
-        image.src = s.url;
-        const sprite = s as SpriteImage;
-        sprite.image = image;
-        const result = [`${c.name}/${s.name}`, sprite] as [string, SpriteImage];
-        image.onload = () => resolve(result);
-        image.onerror = () => {
-          if (image.src !== '') {
-            image.classList.add('failed');
-          }
-          resolve(result);
-        };
-      });
-    }));
-    this.preloadedImages = Object.fromEntries(await Promise.all(images));
+    const images = this.characters.flatMap((c) => c.sprites.map(
+      (s) => fetchSpriteImage(c.name, s),
+    ));
+    this.preloadedImages = Object.fromEntries(await Promise.all(images.concat(
+      this.resources.map((s) => fetchSpriteImage(s, {
+        name: '',
+        url: s,
+        center: [0, 0],
+        scale: 0,
+        id: '',
+      })),
+    )));
   }
 
   next(option?: number): StoryLine | undefined {

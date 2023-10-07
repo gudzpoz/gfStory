@@ -27,6 +27,8 @@ const props = defineProps<{
   remote: Set<string>,
   textHtml: string,
   textHeight?: string,
+
+  loading?: boolean,
 }>();
 
 // eslint-disable-next-line no-spaced-func
@@ -120,6 +122,7 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <div v-if="loading" class="loading-spinner" v-html="circleSvg" />
   </div>
 </template>
 
@@ -301,6 +304,26 @@ onMounted(() => {
   background: linear-gradient(0.25turn, #ccca 0, #ccca 18px, #fdb300c0 19px);
   clip-path: polygon(0 0, 25px 25px, 100% 25px, 100% 0);
   box-shadow: 0 0 2px black;
+}
+
+@keyframes loading-spin {
+  from { transform: rotate(0); }
+  50% { transform: rotate(180deg); }
+  to { transform: rotate(360deg); }
+}
+.story-background .loading-spinner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 4em;
+  height: 4em;
+  z-index: 10;
+  margin: 1em
+}
+.story-background .loading-spinner svg {
+  width: 100%;
+  height: 100%;
+  animation: loading-spin 4s linear infinite;
 }
 
 /* All kinds of effects. */
