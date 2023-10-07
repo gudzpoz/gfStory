@@ -29,3 +29,14 @@
 上面资源的工作做好后，如果没有 `pnpm install` 的先安装 node 的依赖，然后直接 `pnpm dev` 即可。
 
 `pnpm dev` 命令会自动把 `viewer.html` 的入口打包成单个 HTML 文件，以便用于整体打包剧情。
+
+### 网页构架
+
+框架用的是 Vue，目前有三个入口点：
+
+- `index.html`: 编辑器入口
+- `simulator.html`: 剧情模拟器入口
+- `viewer.html`: 剧情阅读器入口（打包用）
+
+剧情编辑器想要提供导出成能网页直接查看的游戏成品，这里用到了打包好的 `viewer.html`（打包成了一个网页文件），
+`index.html` 导出的时候做的就是把编译好的剧情直接放到 `viewer.html` 里面去。
