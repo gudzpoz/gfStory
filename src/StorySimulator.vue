@@ -4,7 +4,9 @@ import {
   NMenu, NTooltip, NTreeSelect,
   type MenuInst, type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
-import { h, ref, watch } from 'vue';
+import {
+  h, onMounted, ref, watch,
+} from 'vue';
 
 import StoryTeller from './components/StoryTeller.vue';
 import { compileMarkdown } from './story/compiler';
@@ -18,8 +20,11 @@ import jsonChapterPresets from './assets/chapters.json';
 const chapterPresets: GfChaptersInfo = jsonChapterPresets;
 
 const chunk = ref('');
+const loading = ref(false);
 function switchStory(path: string) {
+  loading.value = true;
   fetch(path).then((res) => res.text()).then(compileMarkdown).then((compiled) => {
+    loading.value = false;
     chunk.value = compiled;
   });
 }
@@ -80,9 +85,29 @@ const menu = ref<MenuInst>();
 watch(() => value.value, (v) => {
   menu.value?.showOption(v);
   if (v.includes('|')) {
-    const [, file] = v.split('|');
+    const [title, file] = v.split('|');
+    const url = new URL(window.location.toString());
+    if (url.searchParams.get('story') !== v) {
+      url.searchParams.set('story', v);
+      window.history.pushState({}, '', url);
+    }
+    document.title = title;
     switchStory(`${STORY_PATH_PREFIX}${file}`);
   }
+});
+
+function updateFromLocation() {
+  const search = new URLSearchParams(window.location.search);
+  const story = search.get('story');
+  if (story && story !== '') {
+    value.value = story;
+  }
+}
+onMounted(() => {
+  updateFromLocation();
+  window.addEventListener('popstate', () => {
+    updateFromLocation();
+  });
 });
 </script>
 
@@ -102,7 +127,8 @@ watch(() => value.value, (v) => {
       </n-menu>
     </n-drawer-content>
   </n-drawer>
-  <story-teller menu-button @menu="showMenu = true" :chunk="chunk"></story-teller>
+  <story-teller menu-button @menu="showMenu = true" :chunk="chunk" :loading="loading">
+  </story-teller>
 </template>
 
 <style>

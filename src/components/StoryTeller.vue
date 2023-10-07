@@ -11,6 +11,7 @@ import { StoryInterpreter, type SpriteImage, type StoryOption } from '../story/i
 const props = defineProps<{
   chunk?: string,
 
+  loading?: boolean,
   menuButton?: boolean,
 }>();
 
@@ -117,13 +118,13 @@ async function getGlobalStory() {
   return script?.innerHTML ?? await fetch('./sample.lua').then((res) => res.text()) ?? '';
 }
 
-const loading = ref(false);
+const preloading = ref(false);
 async function updateStory(chunk?: string) {
   const s = chunk ?? await getGlobalStory();
   if (s.trim() === '') {
     return;
   }
-  loading.value = true;
+  preloading.value = true;
   background.value = '';
   style.value = 'cover';
   classes.value = [];
@@ -136,7 +137,7 @@ async function updateStory(chunk?: string) {
   backgroundMusic?.pause();
   backgroundMusic = null;
   await story.reload(s);
-  loading.value = false;
+  preloading.value = false;
   nextLine();
 }
 updateStory(props.chunk);
@@ -160,7 +161,7 @@ onUnmounted(() => {
     :options="options"
     @click="nextLine"
     @choose="(v) => nextLine(v)"
-    :loading="loading"
+    :loading="loading || preloading"
   >
     <button v-if="menuButton" @click="emit('menu')">
       <menu-filled></menu-filled><span>菜单</span>
