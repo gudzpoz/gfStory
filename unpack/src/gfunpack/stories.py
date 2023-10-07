@@ -28,10 +28,6 @@ _line_replace_templates = [
         lambda match: f'<span style="font-size: {int(match.group(1)) / 50}em">',
     ),
     (
-        re.compile('<c>', re.IGNORECASE),
-        '</p><p>选项：',
-    ),
-    (
         re.compile('</size>|</color>', re.IGNORECASE),
         '</span>',
     )
@@ -127,6 +123,7 @@ class StoryTranspiler:
         self.content_tags.update(
             tag.lower()
             for tag in re.findall(_effect_tag_regex, line)
+            if not tag.startswith('span')
         )
         return line
 
@@ -364,6 +361,10 @@ class Stories:
 
     extracted: dict[str, pathlib.Path]
 
+    content_tags: set[str]
+
+    effect_tags: set[str]
+
     def __init__(self, directory: str, destination: str, *, gf_data_directory: str | None = None, root_destination: str | None = None) -> None:
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(destination, create=True)
@@ -375,11 +376,17 @@ class Stories:
             root.joinpath('images', 'characters.json'),
         )
         self.gf_data_directory = root.joinpath('gf-data-ch') if gf_data_directory is None else pathlib.Path(gf_data_directory)
+        self.content_tags = set()
+        self.effect_tags = set()
         self.extracted = self.extract_all()
         self.copy_missing_pieces()
 
-    def _transpiler(self, content: str, filename: str):
-        return StoryTranspiler(self.resources, script=content, filename=filename)
+    def _decode(self, content: str, filename: str):
+        transpiler = StoryTranspiler(self.resources, script=content, filename=filename)
+        chunk = transpiler.decode()
+        self.content_tags.update(transpiler.content_tags)
+        self.effect_tags.update(transpiler.effect_tags)
+        return chunk
 
     def extract_all(self):
         assets = UnityPy.load(str(self.resource_file))
@@ -399,7 +406,7 @@ class Stories:
             path = self.destination.joinpath(*name.split('/'))
             os.makedirs(path.parent, exist_ok=True)
             with path.open('w') as f:
-                f.write(self._transpiler(content, name).decode() or '')
+                f.write(self._decode(content, name) or '')
             extracted[name] = path
         return extracted
 
@@ -413,7 +420,7 @@ class Stories:
                 path = self.destination.joinpath(rel)
                 with path.open('w') as f:
                     with file.open() as content:
-                        f.write(self._transpiler(content.read(), name).decode() or '')
+                        f.write(self._decode(content.read(), name) or '')
                 self.extracted[name] = path
 
     def save(self):
