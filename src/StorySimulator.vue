@@ -63,6 +63,8 @@ const data: (MenuOption & TreeSelectOption)[] = [
   generateChapterOption('main', '主线支线活动故事'),
   generateChapterOption('upgrading', '心智升级故事'),
   generateChapterOption('bonding', '格里芬往事'),
+  generateChapterOption('anniversary', '周年庆'),
+  generateChapterOption('skin', '皮肤故事'),
 ];
 function renderLabel(option: MenuOption & TreeSelectOption) {
   if (!option.description || (option.description as string).trim() === '') {

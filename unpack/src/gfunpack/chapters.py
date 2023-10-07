@@ -16,6 +16,9 @@ _event_info_file = 'story_util.hjson'
 _bonding_chapter_file = 'fetter.hjson'
 _bonding_info_file = 'fetter_story.hjson'
 _gun_info_file = 'gun.hjson'
+_npc_info_file = 'npc.hjson'
+_sangvis_info_file = 'sangvis.hjson'
+_skins_info_file = 'skin.hjson'
 _upgrade_info_file = 'mindupdate_story_info.hjson'
 
 _chapter_file_name_regex = re.compile('^(-?\\d+)-')
@@ -142,6 +145,13 @@ class Chapters:
     upgrading_events: list[UpgradingEvent]
 
     gun_info: list[dict[str, typing.Any]]
+    npc_info: list[dict[str, typing.Any]]
+    sangvis_info: list[dict[str, typing.Any]]
+    skin_info: list[dict[str, typing.Any]]
+    guns: dict[int, dict[str, typing.Any]]
+    npcs: dict[int, dict[str, typing.Any]]
+    sangvis: dict[int, dict[str, typing.Any]]
+    skins: dict[int, dict[str, typing.Any]]
 
     def __init__(self, stories: Stories) -> None:
         self.stories = stories
@@ -150,7 +160,10 @@ class Chapters:
         self.bonding_chapters = self._fetch(_bonding_chapter_file, BondingChapter)
         self.bonding_events = self._fetch(_bonding_info_file, BondingEvent)
         self.upgrading_events = self._fetch(_upgrade_info_file, UpgradingEvent)
-        self.gun_info = self._fetch(_gun_info_file, dict)
+        self.gun_info, self.guns = self._fetch_and_index(_gun_info_file)
+        self.npc_info, self.npcs = self._fetch_and_index(_npc_info_file)
+        self.sangvis_info, self.sangvis = self._fetch_and_index(_sangvis_info_file)
+        self.skin_info, self.skins = self._fetch_and_index(_skins_info_file)
         self.all_chapters = self.categorize_stories()
 
     def _fetch(self, file: str, item_type: typing.Type[T]) -> list[T]:
@@ -158,6 +171,11 @@ class Chapters:
             data = hjson.loads(f.read())
             assert isinstance(data, list)
             return [item_type(**item) for item in data]
+    
+    def _fetch_and_index(self, file: str):
+        items = self._fetch(file, dict)
+        index = dict((int(i['id']), i) for i in items)
+        return items, index
 
     @classmethod
     def _parse_point_scripts(cls, point: str):
@@ -191,6 +209,62 @@ class Chapters:
             description='未能解析活动名称',
             stories=[],
         )
+
+    def _categorize_anniversary(self, directory: str = 'anniversary'):
+        categories: dict[str, list[tuple[int, str, str]]] = {}
+        for path in self.stories.extracted.keys():
+            if not path.startswith(directory):
+                continue
+            _, filename = path.split('/')
+            name = filename.split('.')[0]
+            if name.isdigit() and int(name) in self.guns:
+                i = int(name)
+                name = self.guns[i]['name']
+                t = '人形'
+            elif name.startswith('-') and int(name) in self.npcs:
+                i = int(name)
+                name = self.npcs[i]['name']
+                t = '人类协助者'
+            elif name.startswith('s') and int(name[2:]) in self.sangvis:
+                i = int(name[2:])
+                name = self.sangvis[i]['name']
+                t = '协议同归'
+            else:
+                i = 0
+                t = '未知'
+            if t not in categories:
+                categories[t] = []
+            categories[t].append((i, path, name))
+        chapters: list[Chapter] = []
+        for name, roles in categories.items():
+            chapter = Chapter(name=name, description='', stories=[])
+            chapters.append(chapter)
+            for _, path, name in sorted(roles):
+                chapter.stories.append(Story(name=name, description='', files=[path]))
+        return chapters
+
+    def _categorize_skins(self):
+        chapters: dict[int, Chapter] = {}
+        for path in self.stories.extracted.keys():
+            if not path.startswith('skin/'):
+                continue
+            _, filename = path.split('/')
+            name = filename.split('.')[0]
+            skin = self.skins[int(name)]
+            gun_id = skin['fit_gun']
+            name = skin['name']
+            description = skin['dialog']
+            note = skin.get('note', '')
+            if gun_id not in chapters:
+                if gun_id > 0:
+                    character = self.guns[gun_id]['name']
+                else:
+                    character = self.npcs[gun_id]['name']
+                chapters[gun_id] = Chapter(name=character, description='', stories=[])
+            chapters[gun_id].stories.append(Story(
+                name=name, description=description + '\n' + note, files=[path],
+            ))
+        return [v for _, v in sorted(chapters.items())]
 
     def _categorize_main_stories(self):
         chapters: dict[int, Chapter] = {}
@@ -273,18 +347,17 @@ class Chapters:
 
     def _categorize_upgrading_stories(self):
         chapters: dict[int, Chapter] = {}
-        guns = dict((int(gun['id']), gun) for gun in self.gun_info)
         for story in self.upgrading_events:
             gun_id = int(story.gun_id) % 20000
             if gun_id not in chapters:
                 chapters[gun_id] = Chapter(
-                    name=guns[gun_id]['name'],
+                    name=self.guns[gun_id]['name'],
                     description='',
                     stories=[],
                 )
             chapters[gun_id].stories.append(Story(
                 name=f'阶段 {story.stage_id}',
-                description=guns[gun_id]['name'] + ' 心智升级',
+                description=self.guns[gun_id]['name'] + ' 心智升级',
                 files=[f'memoir/{story.scripts}.txt'],
             ))
         return [v for _, v in sorted(chapters.items(), key=lambda e: e[0])]
@@ -294,6 +367,8 @@ class Chapters:
         all_chapters['main'] = self._categorize_main_stories()
         all_chapters['bonding'] = self._categorize_bonding_stories()
         all_chapters['upgrading'] = self._categorize_upgrading_stories()
+        all_chapters['anniversary'] = self._categorize_anniversary()
+        all_chapters['skin'] = self._categorize_skins()
         return all_chapters
 
     def save(self):
