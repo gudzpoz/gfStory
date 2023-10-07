@@ -270,11 +270,15 @@ class Chapters:
         chapters: dict[int, Chapter] = {}
         id_mapping: dict[str, int] = {}
         mapped_files: set[str] = set()
+
+        # 一些联动之类的总之没有进剧情回放的内容可能需要手动记录分类
         for keys, name in _extra_chapters.items():
             chapter_id = -int(int(keys.split(',')[0])) + 5000
             chapters[chapter_id] = Chapter(name=name, description='', stories=[])
             for key in keys.split(','):
                 id_mapping[key] = chapter_id
+
+        # 已经进入剧情回放的章节的信息录入
         for chapter in self.chapters:
             chapters[chapter.id] = Chapter(
                 name=chapter.name,
@@ -283,6 +287,8 @@ class Chapters:
             )
             for campaign_id in chapter.story_campaign_id.split(','):
                 id_mapping[campaign_id] = chapter.id
+
+        # 已经进入剧情回放的剧情录入对应章节
         for story in sorted(self.main_events, key=lambda e: e.id):
             files = self._parse_event_stories(story, mapped_files)
             if len(files) == 0:
@@ -290,6 +296,7 @@ class Chapters:
             if story.campaign == -43: # 暗金潮命名有问题
                 story.title, story.description = story.description, story.title
             campaign = str(story.campaign)
+            # 没有的自动套一个名字
             if campaign not in id_mapping:
                 chapter_id, chapter = self._unknown_chapter(story.campaign, story.title)
                 chapters[chapter_id], id_mapping[campaign] = chapter, chapter_id
@@ -298,6 +305,8 @@ class Chapters:
                 description=story.description,
                 files=files,
             ))
+
+        # 额外的需要特殊处理的故事
         for chapter_str, stories in _extra_stories.items():
             chapter_id = id_mapping[chapter_str]
             chapter = chapters[chapter_id]
@@ -309,10 +318,32 @@ class Chapters:
                         files=[file],
                     ))
         others = set(self.stories.extracted.keys()) - mapped_files
-        for file in sorted(others):
-            if '/' in file:
+
+        # 创建账号之后的播片
+        startavgs: dict[int, str] = {}
+        for file in others:
+            if 'startavg/' not in file:
                 continue
-            match = _chapter_file_name_regex.match(file)
+            i = file[len('startavg/start'):].split('.')[0]
+            assert i.isdigit()
+            startavgs[int(i)] = file
+        assert 0 not in chapters
+        chapters[0] = Chapter(name='开局剧情', description='首次进入游戏自动播放', stories=[])
+        for _, file in sorted(startavgs.items()):
+            chapters[0].stories.append(Story(
+                name=file,
+                description='',
+                files=[file],
+            ))
+
+        # 其它的看起来命名比较规律的东西
+        for file in sorted(others):
+            if 'battleavg/' in file:
+                match = _chapter_file_name_regex.match(file.split('/')[-1])
+            elif '/' in file:
+                continue
+            else:
+                match = _chapter_file_name_regex.match(file)
             if match is None:
                 continue
             campaign = match.group(1)
