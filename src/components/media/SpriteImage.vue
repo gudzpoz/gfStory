@@ -16,14 +16,14 @@ const idealHeightRatio = 1;
 const idealWHRatio = 11 / 16;
 const idealCenterTop = 0.70;
 const framedAdjustment = 0.6;
+const framedTopPadding = 0.10;
 
 function computeImageProperties() {
   const { sprite } = props;
   const { naturalWidth, naturalHeight } = sprite.image;
   const { clientHeight } = props.container;
 
-  const idealHeight = clientHeight * idealHeightRatio * (props.framed ? framedAdjustment : 1);
-  const idealWidth = idealHeight * idealWHRatio;
+  const idealHeight = clientHeight * idealHeightRatio;
   const idealScale = idealHeight / naturalHeight;
   const scale = idealScale * (sprite.scale > 0 ? sprite.scale : 1);
 
@@ -31,9 +31,7 @@ function computeImageProperties() {
   const height = scale * naturalHeight;
   const [centerX, centerY] = sprite.center;
 
-  const centerRatio = idealCenterTop - (
-    props.framed ? idealHeightRatio * framedAdjustment * 0.5 : 0
-  );
+  const centerRatio = idealCenterTop;
 
   if (!props.framed) {
     const left = -scale * (centerX > 0 ? centerX : naturalWidth / 2);
@@ -41,15 +39,18 @@ function computeImageProperties() {
 
     return [width, height, width, height, left, top, 0, 0, 'none'];
   }
-  const boxLeft = -idealWidth / 2;
-  const boxTop = clientHeight * centerRatio - idealHeight / 2;
-  const left = idealWidth / 2 - scale * (centerX > 0 ? centerX : naturalWidth / 2);
-  const top = idealHeight / 2 - scale * (centerY > 0 ? centerY : naturalHeight / 2);
+
+  const boxHeight = idealHeight * framedAdjustment;
+  const boxWidth = boxHeight * idealWHRatio;
+  const boxLeft = -boxWidth / 2;
+  const top = idealHeight * framedTopPadding;
+  const boxTop = clientHeight * centerRatio - idealHeight / 2 - top;
+  const left = boxWidth / 2 - scale * (centerX > 0 ? centerX : naturalWidth / 2);
   return [
-    idealWidth, idealHeight, width, height,
+    boxWidth, boxHeight, width, height,
     boxLeft, boxTop, left, top,
-    `polygon(${-left}px ${-top}px, ${idealWidth - left}px ${-top}px, \
-${idealWidth - left}px ${idealHeight - top}px, ${-left}px ${idealHeight - top}px)`,
+    `polygon(${-left}px ${-top}px, ${boxWidth - left}px ${-top}px, \
+${boxWidth - left}px ${boxHeight - top}px, ${-left}px ${boxHeight - top}px)`,
   ];
 }
 
@@ -65,7 +66,7 @@ const clipPath = ref('');
 
 function updateImageProperties() {
   const properties = computeImageProperties();
-  clipPath.value = properties[7] as string;
+  clipPath.value = properties[8] as string;
   [
     boxWidth.value, boxHeight.value, width.value, height.value,
     boxLeft.value, boxTop.value, left.value, top.value,
