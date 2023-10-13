@@ -46,7 +46,7 @@ export type ChapterType = 'main' | 'bonding' | 'upgrading' | 'anniversary' | 'sk
 export type Story = {
   name: string;
   description: string;
-  files: string[];
+  files: string[] | string[][];
 };
 export type Chapter = {
   name: string;

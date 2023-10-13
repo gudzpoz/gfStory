@@ -7,6 +7,7 @@ import typing
 import hjson
 
 from gfunpack.stories import Stories
+from gfunpack.manual_chapters import Chapter, Story, get_block_list, get_recorded_chapters
 
 _logger = logging.getLogger('gfunpack.prefabs')
 _warning = _logger.warning
@@ -33,30 +34,6 @@ class ChapterInfo:
     type: int = 0
     story_campaign_id: str = '0'
     chapter: str = '0'
-
-
-_extra_chapters = {
-    '-8': '猎兔行动',
-    '-14,-15': '独法师',
-    '-19,-20,-22': '荣耀日',
-    '-32': '瓦尔哈拉',
-    '-38': '梦间剧',
-    '-43': '暗金潮',
-    '-46': '小邪神前线',
-    '-57': '雪浪映花颜',
-}
-_extra_stories = {
-    '-32': {
-        '迪奥杜里管吹奏指南-调酒': 'va11/va11_1.txt',
-        '青春期-调酒': 'va11/va11_2.txt',
-        '先驱者-调酒': 'va11/va11_3.txt',
-        '音爆-调酒': 'va11/va11_4.txt',
-        '鸡胸肉-调酒': 'va11/va11_5.txt',
-        '公众演讲恐惧症-调酒': 'va11/va11_6.txt',
-        '真心话大冒险-调酒': 'va11/va11_7.txt',
-        '世上的最后一场雨-调酒': 'va11/va11_8.txt',
-    },
-}
 
 
 @dataclasses.dataclass
@@ -115,20 +92,6 @@ class BondingEvent:
     description: str = ''
 
 
-@dataclasses.dataclass
-class Story:
-    name: str
-    description: str
-    files: list[str]
-
-
-@dataclasses.dataclass
-class Chapter:
-    name: str
-    description: str
-    stories: list[Story]
-
-
 class Chapters:
     stories: Stories
 
@@ -179,21 +142,23 @@ class Chapters:
 
     @classmethod
     def _parse_point_scripts(cls, point: str):
-        return [s.split(':')[1] for s in point.split(',') if s != '']
+        return [s.split(':')[1].strip() for s in point.split(',') if s != '']
 
     @classmethod
     def _parse_event_stories(cls, story: EventStoryInfo, mapped_files: set[str]):
-        scripts = [s.strip().lower() for s in story.scripts.split(',')]
+        scripts = [s.strip() for s in story.scripts.split(',')]
         if story.first != '' and story.first not in scripts:
             scripts.insert(0, story.first)
         if story.start != '' and story.start not in scripts:
             scripts.insert(0, story.start)
         for extra in (story.point, story.step_start_story, story.round):
-            scripts.extend(cls._parse_point_scripts(extra))
+            scripts.extend(s for s in cls._parse_point_scripts(extra) if s not in scripts)
         if story.end != '' and story.end not in scripts:
             scripts.append(story.end)
         all_files = [f'{s.strip().lower()}.txt' for s in scripts if s.strip() != '']
         filtered = [f for f in all_files if f not in mapped_files]
+        if len(filtered) != 0 and len(filtered) != len(all_files):
+            _warning('potential duplicate story entries: %s (%s)', story.title, filtered)
         mapped_files.update(all_files)
         return filtered
     
@@ -267,19 +232,12 @@ class Chapters:
         return [v for _, v in sorted(chapters.items())]
 
     def _categorize_main_stories(self):
-        chapters: dict[int, Chapter] = {}
-        id_mapping: dict[str, int] = {}
-        mapped_files: set[str] = set()
-
-        # 一些联动之类的总之没有进剧情回放的内容可能需要手动记录分类
-        for keys, name in _extra_chapters.items():
-            chapter_id = -int(int(keys.split(',')[0])) + 5000
-            chapters[chapter_id] = Chapter(name=name, description='', stories=[])
-            for key in keys.split(','):
-                id_mapping[key] = chapter_id
+        chapters, id_mapping, mapped_files = get_recorded_chapters()
 
         # 已经进入剧情回放的章节的信息录入
         for chapter in self.chapters:
+            if chapter.id in chapters:
+                continue
             chapters[chapter.id] = Chapter(
                 name=chapter.name,
                 description=chapter.chapter,
@@ -303,41 +261,16 @@ class Chapters:
             chapters[id_mapping[campaign]].stories.append(Story(
                 name=files[0] if story.title == '' else story.title,
                 description=story.description,
-                files=files,
+                files=typing.cast(list[str | tuple[str, str]], files),
             ))
 
-        # 额外的需要特殊处理的故事
-        for chapter_str, stories in _extra_stories.items():
-            chapter_id = id_mapping[chapter_str]
-            chapter = chapters[chapter_id]
-            for name, file in stories.items():
-                if file not in mapped_files:
-                    chapter.stories.append(Story(
-                        name=name,
-                        description=file,
-                        files=[file],
-                    ))
         others = set(self.stories.extracted.keys()) - mapped_files
 
-        # 创建账号之后的播片
-        startavgs: dict[int, str] = {}
-        for file in others:
-            if 'startavg/' not in file:
-                continue
-            i = file[len('startavg/start'):].split('.')[0]
-            assert i.isdigit()
-            startavgs[int(i)] = file
-        assert 0 not in chapters
-        chapters[0] = Chapter(name='开局剧情', description='首次进入游戏自动播放', stories=[])
-        for _, file in sorted(startavgs.items()):
-            chapters[0].stories.append(Story(
-                name=file,
-                description='',
-                files=[file],
-            ))
-
         # 其它的看起来命名比较规律的东西
+        blocked = get_block_list()
         for file in sorted(others):
+            if file in blocked:
+                continue
             if 'battleavg/' in file:
                 match = _chapter_file_name_regex.match(file.split('/')[-1])
             elif '/' in file:
@@ -408,10 +341,10 @@ class Chapters:
         for chapters in self.all_chapters.values():
             for chapter in chapters:
                 for story in chapter.stories:
-                    story.files = [f for f in story.files if f in self.stories.extracted]
-                    all_file_list.extend(story.files)
+                    story.files = list(filter(lambda f: (f if isinstance(f, str) else f[0]) in self.stories.extracted, story.files))
+                    all_file_list.extend((f if isinstance(f, str) else f[0]) for f in story.files)
         all_files = set(all_file_list)
-        others = set(self.stories.extracted.keys()) - all_files
+        others = set(self.stories.extracted.keys()) - all_files - get_block_list()
         self.all_chapters['main'].append(Chapter(
             name='未能归类',
             description='程序未能自动归类的故事',

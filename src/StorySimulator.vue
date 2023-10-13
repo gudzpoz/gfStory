@@ -25,10 +25,14 @@ const chunk = ref('');
 const loading = ref(false);
 function switchStory(path: string) {
   loading.value = true;
-  fetch(path).then((res) => res.text()).then(compileMarkdown).then((compiled) => {
-    loading.value = false;
-    chunk.value = compiled;
-  });
+  fetch(path).then((res) => res.text()).then(compileMarkdown)
+    .then((compiled) => {
+      loading.value = false;
+      chunk.value = compiled;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
 }
 
 const showMenu = ref(false);
@@ -60,7 +64,9 @@ function generateChapterOption(label: ChapterType, name: string): MenuOption & T
           key,
           label: story.name,
           description: story.description,
-          children: story.files.map((file, k) => generateLeafOption(`${key}|${file}`, `阶段 ${k}`)),
+          children: story.files.map((file, k) => (
+            file instanceof String ? generateLeafOption(`${key}|${file}`, `阶段 ${k}`) : generateLeafOption(`${key}|${file[0]}`, file[1])
+          )),
         };
       }),
     })),
