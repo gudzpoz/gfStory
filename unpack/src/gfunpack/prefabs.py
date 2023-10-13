@@ -67,6 +67,8 @@ class Prefabs:
                         assert obj.path_id not in objects
                         assert data.m_GameObject.file_id == 0
                         objects[obj.path_id] = data
+                except AssertionError as e:
+                    _warning('something goes wrong (%s): %s: %s', prefab.path, obj.path_id, e)
                 except AttributeError:
                     pass
         return objects
