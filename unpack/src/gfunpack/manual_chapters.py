@@ -19,7 +19,7 @@ _chapter_starting = lambda: Chapter(
     name='开局剧情',
     description='首次进入游戏自动播放',
     stories=[
-        Story(name=f'第 {i} 节', description='', files=[f'startavg/start{i}.txt'])
+        Story(name=f'第 {i + 1} 节', description='', files=[f'startavg/start{i}.txt'])
         for i in range(11 + 1)
     ],
 )
@@ -113,30 +113,51 @@ _extra_stories_va11 = lambda: [
 ]
 
 
-_extra_chapters: dict[str, tuple[str, list]] = {
-    '-8': ('猎兔行动', []),
-    '-14,-15': ('独法师', []),
-    '-19,-20,-22': ('荣耀日', []),
-    '-32': ('瓦尔哈拉', _extra_stories_va11()),
-    '-38': ('梦间剧', []),
-    '-43': ('暗金潮', []),
-    '-46': ('小邪神前线', []),
-    '-57': ('雪浪映花颜', []),
-}
+_extra_stories_cocoon = lambda: [
+    ('凉夜廻', '', ['-42-1-1first.txt']),
+    ('雨夜谈', '', ['-42-1-2.txt']),
+    ('倒影', '', ['-42-2-1first.txt']),
+    ('追忆', '', ['-42-2-2.txt']),
+    ('无名之人', '', [
+        ('-42-3-1first.txt', '剧情'),
+        ('-42-3-2.txt', '记忆碎片 1'),
+        ('-42-3-3.txt', '记忆碎片 2'),
+        ('-42-3-4.txt', '记忆碎片 3'),
+        ('-42-3-5.txt', '记忆碎片 4'),
+        ('-42-3-6.txt', '记忆碎片 5'),
+        ('-42-3-7.txt', '记忆碎片 6'),
+    ]),
+    ('无痕之泪', '',['-42-3-8.txt']),
+    ('蝶影消散', '', ['-42-4-1first.txt']),
+    ('破茧时分', '', ['-42-4-2.txt']),
+]
+
+
+_extra_chapters: list[tuple[str, str, str, list]] = [
+    ('-42', '茧中蝶影', '2020', _extra_stories_cocoon()),
+
+    ('-8', '猎兔行动', '《苍翼默示录》x《罪恶装备》联动内容', []),
+    ('-14,-15', '独法师', '《崩坏学园2》联动内容', []),
+    ('-19,-20,-22', '荣耀日', '《DJMAX RESPECT》联动内容', []),
+    ('-32', '瓦尔哈拉', '《VA-11 HALL-A》联动内容', _extra_stories_va11()),
+    ('-38', '梦间剧', '《神枪少女》联动内容', []),
+    ('-43', '暗金潮', '《全境封锁》联动内容', []),
+    ('-46', '小邪神前线', '《邪神与厨二病少女》联动内容', []),
+    ('-57', '雪浪映花颜', '《佐贺偶像是传奇 卷土重来》联动内容', []),
+]
 
 
 _get_extra_chapters = lambda: dict(
-    ((int(i.split(',')[0]) + 5000), Chapter(name, '联动内容', [Story(s[0], s[1], s[2]) for s in stories]))
-    for i, (name, stories) in _extra_chapters.items()
+    ((i + 5000), Chapter(name, description, [Story(s[0], s[1], s[2]) for s in stories]))
+    for i, (_, name, description, stories) in enumerate(_extra_chapters)
 )
 
 
 def _get_extra_chapter_mapping():
     mapping: dict[str, int] = {}
-    for ids in _extra_chapters.keys():
-        first = int(ids.split(',')[0]) + 5000
-        for i in ids.split(','):
-            mapping[i] = first
+    for i, chapter in enumerate(_extra_chapters):
+        for j in chapter[0].split(','):
+            mapping[j] = i + 5000
     return mapping
 
 

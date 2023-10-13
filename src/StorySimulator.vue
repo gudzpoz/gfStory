@@ -36,10 +36,12 @@ function switchStory(path: string) {
 }
 
 const showMenu = ref(false);
-function generateLeafOption(key: string, label: string)
+function generateLeafOption(key: string, pair: string[] | string, i: number, name?: string)
   : MenuOption & TreeSelectOption {
+  const file = typeof pair === 'string' ? pair : pair[0];
+  const label = name ?? (typeof pair === 'string' ? `阶段 ${i + 1}` : pair[1]);
   return {
-    key,
+    key: `${key}|${file}`,
     label,
   };
 }
@@ -58,15 +60,13 @@ function generateChapterOption(label: ChapterType, name: string): MenuOption & T
           return { key, label: story.name, disabled: true };
         }
         if (story.files.length === 1) {
-          return generateLeafOption(`${key}|${story.files[0]}`, story.name);
+          return generateLeafOption(key, story.files[0], 0, story.name);
         }
         return {
           key,
           label: story.name,
           description: story.description,
-          children: story.files.map((file, k) => (
-            file instanceof String ? generateLeafOption(`${key}|${file}`, `阶段 ${k}`) : generateLeafOption(`${key}|${file[0]}`, file[1])
-          )),
+          children: story.files.map((file, k) => generateLeafOption(key, file, k)),
         };
       }),
     })),
