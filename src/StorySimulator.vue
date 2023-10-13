@@ -111,17 +111,23 @@ function updateFromLocation() {
     value.value = story;
   }
 }
+
+// StorySimulator should never get unmounted, so not registering unmount hooks to remove listeners.
+const width = ref(window.innerWidth);
 onMounted(() => {
   updateFromLocation();
   window.addEventListener('popstate', () => {
     updateFromLocation();
+  });
+  window.addEventListener('resize', () => {
+    width.value = window.innerWidth;
   });
 });
 </script>
 
 <template>
   <n-config-provider :theme="darkTheme" :locale="zhCN">
-    <n-drawer v-model:show="showMenu" :width="300" max-width="80vw" placement="left"
+    <n-drawer v-model:show="showMenu" :width="Math.min(width * 0.8, 400)" placement="left"
       display-directive="show"
     >
       <n-drawer-content title="剧情选择" :native-scrollbar="false">
