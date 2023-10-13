@@ -186,3 +186,53 @@ def get_recorded_chapters():
         for story in chapter.stories:
             recorded_files.update((f if isinstance(f, str) else f[0]) for f in story.files)
     return chapters, id_mapping, recorded_files
+
+
+_attached_stories = [
+    ('0-2-1.txt', '0-2-3round2.txt'),
+    ('-2-1-1.txt', '-2-1-4-point2207.txt'),
+
+    # 盲拆法则
+    ('-7-1-3round1.txt', '-7-1-3round2.txt'),
+    ('-7-1-3round2.txt', '-7-1-4-point3498.txt'),
+
+    ('-7-2-3round1.txt', '-7-2-3round2.txt'),
+    ('-7-2-3round2.txt', '-7-2-4-point3342.txt'),
+
+    ('-7-3-3round1.txt', '-7-3-3round2.txt'),
+    ('-7-3-3round2.txt', '-7-3-4-point3533.txt'),
+
+    ('-7-4-3round1.txt', '-7-4-3round2.txt'),
+    ('-7-4-3round2.txt', '-7-4-4-point3612.txt'),
+
+    # 有序紊流
+    ('-24-2-1.txt', '-24-2-2.txt'),
+    ('-24-3-2first.txt', '-24-3-2.txt'),
+    ('-24-4-2first.txt', '-24-4-2.txt'),
+    ('-24-6-1.txt', '-24-6-2.txt'),
+    ('-24-7-2first.txt', '-24-7-2.txt'),
+    ('-24-8-2first.txt', '-24-8-2.txt'),
+    ('-24-9-2first.txt', '-24-9-2.txt'),
+    ('-24-10-2first.txt', '-24-10-2.txt'),
+    ('-24-11-2first.txt', '-24-11-2.txt'),
+    ('-24-12-2first.txt', '-24-12-2.txt'),
+    ('-24-13-2first.txt', '-24-13-2.txt'),
+    ('-24-14-2first.txt', '-24-14-2.txt'),
+    ('-24-15-1.txt', '-24-15-2first.txt'),
+    ('-24-15-2first.txt', '-24-15-2.txt'),
+]
+
+
+def post_insert(chapters: dict[int, Chapter], mapped_files: set[str]):
+    stories: dict[str, Story] = {}
+    for chapter in chapters.values():
+        for story in chapter.stories:
+            for file in story.files:
+                stories[file if isinstance(file, str) else file[0]] = story
+    for file, attached in _attached_stories:
+        assert attached not in mapped_files
+        story = stories[file]
+        assert isinstance(story.files[0], str)
+        stories[attached] = story
+        story.files.append(attached)
+        mapped_files.add(attached)

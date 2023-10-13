@@ -7,7 +7,7 @@ import typing
 import hjson
 
 from gfunpack.stories import Stories
-from gfunpack.manual_chapters import Chapter, Story, get_block_list, get_recorded_chapters
+from gfunpack.manual_chapters import Chapter, Story, get_block_list, get_recorded_chapters, post_insert
 
 _logger = logging.getLogger('gfunpack.prefabs')
 _warning = _logger.warning
@@ -247,7 +247,7 @@ class Chapters:
                 id_mapping[campaign_id] = chapter.id
 
         # 已经进入剧情回放的剧情录入对应章节
-        for story in sorted(self.main_events, key=lambda e: e.id):
+        for story in sorted(self.main_events, key=lambda e: (abs(e.campaign), e.id)):
             files = self._parse_event_stories(story, mapped_files)
             if len(files) == 0:
                 continue
@@ -263,6 +263,8 @@ class Chapters:
                 description=story.description,
                 files=typing.cast(list[str | tuple[str, str]], files),
             ))
+
+        post_insert(chapters, mapped_files)
 
         others = set(self.stories.extracted.keys()) - mapped_files
 
