@@ -268,7 +268,7 @@ onMounted(() => {
   font-size: 1.1em;
   margin: 0.5em 1.2em 1.2em 1.2em;
   word-wrap: break-word;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 .dialog .text p {
   margin: 0;

@@ -220,7 +220,7 @@ function showHelpDialog() {
 
 .list-operations {
   position: sticky;
-  overflow-x: scroll;
+  overflow-x: auto;
   top: 0;
   z-index: 1;
 }

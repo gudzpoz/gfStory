@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {
+  NConfigProvider,
   NDrawer, NDrawerContent,
   NMenu, NTooltip, NTreeSelect,
+  darkTheme, zhCN,
   type MenuInst, type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
 import {
@@ -112,27 +114,29 @@ onMounted(() => {
 </script>
 
 <template>
-  <n-drawer v-model:show="showMenu" :width="300" max-width="80vw" placement="left"
-    display-directive="show"
-  >
-    <n-drawer-content title="剧情选择" :native-scrollbar="false">
-      <n-tree-select :options="data" v-model:value="value"
-        placeholder="搜索" filterable show-path :render-label="(v) => renderLabel(v.option)"
-      >
-      </n-tree-select>
-      <n-menu ref="menu" :options="data" v-model:value="value"
-        :root-indent="36" :indent="12"
-        accordion :render-label="(v) => renderLabel(v as MenuOption & TreeSelectOption)"
-      >
-      </n-menu>
-    </n-drawer-content>
-  </n-drawer>
-  <story-teller menu-button @menu="showMenu = true" :chunk="chunk" :loading="loading">
-  </story-teller>
+  <n-config-provider :theme="darkTheme" :locale="zhCN">
+    <n-drawer v-model:show="showMenu" :width="300" max-width="80vw" placement="left"
+      display-directive="show"
+    >
+      <n-drawer-content title="剧情选择" :native-scrollbar="false">
+        <n-tree-select :options="data" v-model:value="value"
+          placeholder="搜索" filterable show-path :render-label="(v) => renderLabel(v.option)"
+        >
+        </n-tree-select>
+        <n-menu ref="menu" :options="data" v-model:value="value"
+          :root-indent="24" :indent="12"
+          accordion :render-label="(v) => renderLabel(v as MenuOption & TreeSelectOption)"
+        >
+        </n-menu>
+      </n-drawer-content>
+    </n-drawer>
+    <story-teller menu-button @menu="showMenu = true" :chunk="chunk" :loading="loading">
+    </story-teller>
+  </n-config-provider>
 </template>
 
 <style>
-#app {
+#app, .story-background {
   height: 100vh;
 }
 </style>
