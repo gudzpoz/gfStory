@@ -2,7 +2,7 @@
 import {
   NConfigProvider,
   NDrawer, NDrawerContent,
-  NMenu, NTooltip, NTreeSelect,
+  NEllipsis, NMenu, NTreeSelect,
   darkTheme, zhCN,
   type MenuInst, type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
@@ -74,12 +74,12 @@ const data: (MenuOption & TreeSelectOption)[] = [
   generateChapterOption('skin', '皮肤故事'),
 ];
 function renderLabel(option: MenuOption & TreeSelectOption) {
+  const label = h('span', { className: 'story-heading' }, { default: () => option.label });
   if (!option.description || (option.description as string).trim() === '') {
-    return option.label;
+    return label;
   }
-  return h(NTooltip, { trigger: 'hover' }, {
-    default: () => option.description,
-    trigger: () => option.label,
+  return h(NEllipsis, { trigger: 'hover' }, {
+    default: () => [label, option.description as string],
   });
 }
 const value = ref('');
@@ -138,5 +138,9 @@ onMounted(() => {
 <style>
 #app, .story-background {
   height: 100vh;
+}
+.story-heading {
+  font-weight: bold;
+  margin-right: 1em;
 }
 </style>
