@@ -59,14 +59,18 @@ function updateAudio(audio: string) {
   if (audio !== '') {
     backgroundMusic = new Audio(audio);
     backgroundMusic.loop = true;
-    backgroundMusic.play();
+    try {
+      backgroundMusic.play();
+    } catch (_) { /* empty */ }
   }
 }
 
 function playAudio(audio: string) {
   const sePlayer = new Audio(audio);
   sePlayer.loop = false;
-  sePlayer.play();
+  try {
+    sePlayer.play();
+  } catch (_) { /* empty */ }
 }
 
 function updateLine(line: string, tags: Record<string, string>) {

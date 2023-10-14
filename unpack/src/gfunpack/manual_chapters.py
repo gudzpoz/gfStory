@@ -135,6 +135,11 @@ _extra_stories_cocoon = lambda: [
 
 _extra_chapters: list[tuple[str, str, str, list]] = [
     ('-42', '茧中蝶影', '2020', _extra_stories_cocoon()),
+    ('-50', '焙炒爱意', '2022', []),
+    ('-52', '里坎禁猎区', '2022', []),
+    ('-59', '迷笼猜想', '2023', []),
+    ('-61', '思域迷航', '2023', []),
+    ('-62', '许可！二次加载', '2023', []),
 
     ('-8', '猎兔行动', '《苍翼默示录》x《罪恶装备》联动内容', []),
     ('-14,-15', '独法师', '《崩坏学园2》联动内容', []),
@@ -159,17 +164,6 @@ def _get_extra_chapter_mapping():
         for j in chapter[0].split(','):
             mapping[j] = i + 5000
     return mapping
-
-
-def get_block_list():
-    return set(
-        [
-            '0-0-0.txt',  # 空白，“替代剧情”
-            '0-0-1.txt',  # 空白，“替代教程”
-            'profiles.txt',
-            'avgplaybackprofiles.txt',
-        ]
-    )
 
 
 def get_recorded_chapters():
@@ -223,6 +217,16 @@ _attached_stories = [
 ]
 
 
+_extra_chapter_mapping = {
+    '-27': '-24', # 有序紊流：飓风营救
+    '-45': '-24', # 飓风营救复刻
+    '-99': '-58', # 慢休克 END
+}
+def add_extra_chapter_mappings(id_mapping: dict[str, int]):
+    for extra, mapping in _extra_chapter_mapping.items():
+        id_mapping[extra] = id_mapping[mapping]
+
+
 def post_insert(chapters: dict[int, Chapter], mapped_files: set[str]):
     stories: dict[str, Story] = {}
     for chapter in chapters.values():
@@ -230,9 +234,33 @@ def post_insert(chapters: dict[int, Chapter], mapped_files: set[str]):
             for file in story.files:
                 stories[file if isinstance(file, str) else file[0]] = story
     for file, attached in _attached_stories:
-        assert attached not in mapped_files
+        assert attached not in mapped_files, attached
         story = stories[file]
         assert isinstance(story.files[0], str)
         stories[attached] = story
         story.files.append(attached)
         mapped_files.add(attached)
+
+
+def get_block_list():
+    return set(
+        [
+            '0-0-0.txt',  # 空白，“替代剧情”
+            '0-0-1.txt',  # 空白，“替代教程”
+            'profiles.txt',
+            'avgplaybackprofiles.txt',
+
+            # 魔方行动，例如 -6-1-1 和 -1-1-1 的内容是一模一样的……
+            '-6-1-1.txt',
+            '-6-1-2first.txt',
+            '-6-2-1.txt',
+            '-6-2-2end.txt',
+            '-6-2-2first.txt',
+            '-6-3-1.txt',
+            '-6-3-2end.txt',
+            '-6-3-2first.txt',
+            '-6-4-1.txt',
+            '-6-4-2end.txt',
+            '-6-4-2first.txt',
+        ]
+    )

@@ -73,8 +73,10 @@ function generateChapterOption(label: ChapterType, name: string): MenuOption & T
   };
 }
 const data: (MenuOption & TreeSelectOption)[] = [
-  generateChapterOption('main', '主线支线活动故事'),
-  generateChapterOption('upgrading', '心智升级故事'),
+  generateChapterOption('main', '主线剧情'),
+  generateChapterOption('event', '小型活动'),
+  generateChapterOption('colab', '联动'),
+  generateChapterOption('upgrading', '心智升级'),
   generateChapterOption('bonding', '格里芬往事'),
   generateChapterOption('anniversary', '周年庆'),
   generateChapterOption('skin', '皮肤故事'),

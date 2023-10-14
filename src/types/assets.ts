@@ -42,7 +42,7 @@ export function getUrlType(s: string): typeof MEDIA_TYPES[number] {
   return 'sprite';
 }
 
-export type ChapterType = 'main' | 'bonding' | 'upgrading' | 'anniversary' | 'skin';
+export type ChapterType = 'main' | 'event' | 'colab' | 'bonding' | 'upgrading' | 'anniversary' | 'skin';
 export type Story = {
   name: string;
   description: string;

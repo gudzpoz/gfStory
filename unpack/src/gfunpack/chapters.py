@@ -7,7 +7,7 @@ import typing
 import hjson
 
 from gfunpack.stories import Stories
-from gfunpack.manual_chapters import Chapter, Story, get_block_list, get_recorded_chapters, post_insert
+from gfunpack.manual_chapters import Chapter, Story, add_extra_chapter_mappings, get_block_list, get_recorded_chapters, post_insert
 
 _logger = logging.getLogger('gfunpack.prefabs')
 _warning = _logger.warning
@@ -245,6 +245,8 @@ class Chapters:
             )
             for campaign_id in chapter.story_campaign_id.split(','):
                 id_mapping[campaign_id] = chapter.id
+        
+        add_extra_chapter_mappings(id_mapping)
 
         # 已经进入剧情回放的剧情录入对应章节
         for story in sorted(self.main_events, key=lambda e: (abs(e.campaign), e.id)):
@@ -330,7 +332,21 @@ class Chapters:
 
     def categorize_stories(self):
         all_chapters: dict[str, list[Chapter]] = {}
-        all_chapters['main'] = self._categorize_main_stories()
+        stories = self._categorize_main_stories()
+        main, events, colab = [], [], []
+        for s in stories:
+            if s.description.isdigit() and 2000 < int(s.description) < 2100:
+                events.append(s)
+            elif '联动内容' in s.description:
+                colab.append(s)
+            else:
+                main.append(s)
+        events.sort(key=lambda e: int(e.description))
+        events.extend(filter(lambda e: e.name.startswith('未知: '), main))
+        main = list(filter(lambda e: not e.name.startswith('未知: '), main))
+        all_chapters['main'] = main
+        all_chapters['event'] = events
+        all_chapters['colab'] = colab
         all_chapters['bonding'] = self._categorize_bonding_stories()
         all_chapters['upgrading'] = self._categorize_upgrading_stories()
         all_chapters['anniversary'] = self._categorize_anniversary()
@@ -347,7 +363,7 @@ class Chapters:
                     all_file_list.extend((f if isinstance(f, str) else f[0]) for f in story.files)
         all_files = set(all_file_list)
         others = set(self.stories.extracted.keys()) - all_files - get_block_list()
-        self.all_chapters['main'].append(Chapter(
+        self.all_chapters['event'].append(Chapter(
             name='未能归类',
             description='程序未能自动归类的故事',
             stories=[
