@@ -178,7 +178,7 @@ class Chapters:
     def _categorize_anniversary(self, directory: str = 'anniversary'):
         categories: dict[str, list[tuple[int, str, str]]] = {}
         for path in self.stories.extracted.keys():
-            if not path.startswith(directory):
+            if not path.startswith(f'{directory}/'):
                 continue
             _, filename = path.split('/')
             name = filename.split('.')[0]
@@ -350,6 +350,8 @@ class Chapters:
         all_chapters['bonding'] = self._categorize_bonding_stories()
         all_chapters['upgrading'] = self._categorize_upgrading_stories()
         all_chapters['anniversary'] = self._categorize_anniversary()
+        all_chapters['anniversary5'] = self._categorize_anniversary('anniversary5')
+        all_chapters['anniversary6'] = self._categorize_anniversary('anniversary6')
         all_chapters['skin'] = self._categorize_skins()
         return all_chapters
 

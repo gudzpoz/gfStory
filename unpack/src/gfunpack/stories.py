@@ -8,7 +8,7 @@ import typing
 import UnityPy
 from UnityPy.classes import TextAsset
 
-from gfunpack import mapper, utils
+from gfunpack import mapper, utils, manual_chapters
 
 _logger = logging.getLogger('gfunpack.prefabs')
 _warning = _logger.warning
@@ -411,6 +411,7 @@ class Stories:
         return extracted
 
     def copy_missing_pieces(self):
+        manual_chapters.get_extra_anniversary_stories(self.gf_data_directory.joinpath('asset', 'avgtxt'))
         directory = utils.check_directory(self.gf_data_directory.joinpath('asset', 'avgtxt'))
         for file in directory.glob('**/*.txt'):
             rel = file.relative_to(directory)
@@ -418,6 +419,7 @@ class Stories:
             if name not in self.extracted:
                 _warning('filling in %s', name)
                 path = self.destination.joinpath(rel)
+                path.parent.mkdir(exist_ok=True)
                 with path.open('w') as f:
                     with file.open() as content:
                         f.write(self._decode(content.read(), name) or '')

@@ -168,4 +168,7 @@ stories/
 images/
 audio/
 gf-resource-downloader/
+GFLData/
+gf-data-ch/asset/avgtxt/anniversary5/
+gf-data-ch/asset/avgtxt/anniversary6/
 *.ipynb

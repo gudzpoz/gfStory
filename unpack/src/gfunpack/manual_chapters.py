@@ -1,4 +1,7 @@
 import dataclasses
+import pathlib
+import shutil
+import subprocess
 
 
 @dataclasses.dataclass
@@ -264,3 +267,21 @@ def get_block_list():
             '-6-4-2first.txt',
         ]
     )
+
+
+def get_extra_anniversary_stories(destination: pathlib.Path):
+    directory = pathlib.Path('GFLData', 'ch', 'text', 'avgtxt', 'anniversary')
+    if not pathlib.Path('GFLData').is_dir():
+        subprocess.run([
+            'git', 'clone', 'https://github.com/randomqwerty/GFLData.git',
+        ], stdout=subprocess.DEVNULL).check_returncode()
+    if not destination.joinpath('anniversary5').is_dir():
+        subprocess.run([
+            'git', 'checkout', '9d0dae0066ccf1bc9e32abf35401d5ef7eaf7746',
+        ], cwd='GFLData').check_returncode()
+        shutil.copytree(directory, destination.joinpath('anniversary5'))
+    if not destination.joinpath('anniversary6').is_dir():
+        subprocess.run([
+            'git', 'checkout', '93e4c8dd9a236f57b6869cf5c88c93c1cc79255c',
+        ], cwd='GFLData').check_returncode()
+        shutil.copytree(directory, destination.joinpath('anniversary6'))
