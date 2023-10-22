@@ -69,10 +69,10 @@ function importPreset(preset: Preset) {
   const url = `${
     props.type === 'audio' ? AUDIO_PATH_PREFIX : IMAGE_PATH_PREFIX
   }${preset.url}`;
-  fetch(url).then((res) => res.blob()).then((blob) => db[props.type].add({
+  db[props.type].add({
     name: url.substring(url.lastIndexOf('/') + 1),
-    blob,
-  }))
+    blob: url,
+  })
     .then(() => notify.info({
       content: `已导入 ${preset.url}`,
     }))
@@ -84,6 +84,10 @@ const presetUrlColumn: DataTableBaseColumn<Preset> = reactive({
   key: 'url',
   filterOptionValue: '',
   filter: (v, row) => row.url.toLowerCase().includes((v as string).toLowerCase()),
+});
+const presetFilter = ref('');
+watch(() => presetFilter.value, (filter) => {
+  presetUrlColumn.filterOptionValue = filter;
 });
 const presetColumns: DataTableColumns<Preset> = [
   presetUrlColumn,
@@ -116,7 +120,6 @@ const presets: ComputedRef<Preset[]> = computed(
     url,
   })),
 );
-const presetFilter = ref('');
 </script>
 
 <template>

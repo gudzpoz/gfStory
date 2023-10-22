@@ -40,8 +40,9 @@ provide('narrators', computed(() => {
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
-  (event: 'update:modelValue', modelValue: GfStory): void,
-  (event: 'export'): void,
+  'update:modelValue': [value: GfStory],
+  'export': [value: void],
+  'exportMarkdown': [value: void],
 }>();
 
 const shouldShowCharacterList = ref(false);
@@ -174,6 +175,11 @@ function showHelpDialog() {
       </n-button>
       <n-button @click="emit('update:modelValue', modelValue)" type="warning">
         <n-icon><refresh-filled></refresh-filled></n-icon>暂存并预览
+      </n-button>
+      <n-button type="primary"
+        @click="emit('update:modelValue', modelValue); emit('exportMarkdown')"
+      >
+        <n-icon><download-filled></download-filled></n-icon>导出 Markdown
       </n-button>
       <n-button @click="emit('update:modelValue', modelValue); emit('export')" type="primary">
         <n-icon><download-filled></download-filled></n-icon>导出故事

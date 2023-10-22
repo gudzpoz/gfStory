@@ -46,6 +46,17 @@ async function updateStory(s: GfStory) {
   localStorage.setItem('story', JSON.stringify(story));
 }
 
+async function exportMarkdown() {
+  saveAs(new Blob([await linesToMarkdown(story, async (s) => {
+    if (s.includes(':')) {
+      return db.toDataUrl(s);
+    }
+    return new URL(s, document.baseURI).href;
+  })], {
+    type: 'text/markdown',
+  }), 'story.md');
+}
+
 async function exportStory() {
   const root = new JSZip();
   const zip = root.folder('story');
@@ -67,6 +78,9 @@ async function exportStory() {
       const file = await db[type as typeof MEDIA_TYPES[number]].where('name').equals(name).first();
       if (!file) {
         throw new Error('no such media found');
+      }
+      if (typeof file.blob === 'string') {
+        return file.blob;
       }
       directory.file(name, file.blob);
     }
@@ -95,6 +109,7 @@ async function exportStory() {
             <line-list :modelValue="story"
               @update:modelValue="updateStory"
               @export="exportStory"
+              @export-markdown="exportMarkdown"
             >
             </line-list>
           </n-layout-content>

@@ -11,7 +11,10 @@ export const ACCEPTED: Record<typeof MEDIA_TYPES[number], string> = {
 
 export interface RawMedia {
   name: string;
-  blob: Blob;
+  /**
+   * Either a local resource (blob) or a remote resource (link).
+   */
+  blob: Blob | string;
 }
 
 export interface Media extends RawMedia {
@@ -73,6 +76,9 @@ export class MediaDatabase extends Dexie {
   }
 
   getMediaDataUrl(type: typeof MEDIA_TYPES[number], media: RawMedia) {
+    if (typeof media.blob === 'string') {
+      return media.blob;
+    }
     const url = URL.createObjectURL(media.blob);
     this.cache[type][media.name] = url;
     return url;
