@@ -201,8 +201,8 @@ class StoryTranspiler:
         resource_urls = json.dumps(json.dumps(
             list(self._resources), ensure_ascii=False), ensure_ascii=False)
         return f'''```lua global
-print.defineCharacters({serialized})
-print.preloadResources({resource_urls})
+extern.defineCharacters({serialized})
+extern.preloadResources({resource_urls})
 ```\n\n''';
     
     def _generate_bg_line(self, bg: str, effects: dict[str, str]):

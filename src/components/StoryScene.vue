@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { SelectLine } from '@brocatel/mdc';
 import { ref, onMounted } from 'vue';
 
 import SpriteImageView from './media/SpriteImage.vue';
-import type { SpriteImage, StoryOption } from '../story/interpreter';
+import type { SpriteImage } from '../story/interpreter';
 
 // eslint-disable-next-line import/no-unresolved
 import circleSvg from '../assets/circle.svg?raw';
@@ -23,7 +24,7 @@ const props = defineProps<{
   classes: string[],
   narratorHtml: string,
   sprites: SpriteImage[],
-  options: StoryOption[],
+  options: SelectLine['select'],
   remote: Set<string>,
   textHtml: string,
   textHeight?: string,
@@ -105,7 +106,7 @@ onMounted(() => {
         </sprite-image-view>
       </transition-group>
       <div class="options" v-show="options.length > 0">
-        <button v-html="option.option" v-for="option in options" :key="option.option"
+        <button v-html="option.option" v-for="option in options" :key="option.option.text"
           @click="emit('choose', option.key)"
         >
         </button>

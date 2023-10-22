@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { SelectLine, TextLine } from '@brocatel/mdc';
 import {
   computed, onUnmounted, ref, watch,
 } from 'vue';
-
 import { MenuFilled } from '@vicons/material';
 
 import StoryScene from './StoryScene.vue';
-import { StoryInterpreter, type SpriteImage, type StoryOption } from '../story/interpreter';
+import { StoryInterpreter, type SpriteImage, type Tags } from '../story/interpreter';
 
 const props = defineProps<{
   chunk?: string,
@@ -31,7 +31,7 @@ const narratorHtml = computed(() => `<span style="color: ${narratorColor.value}"
 const sprites = ref<SpriteImage[]>([]);
 const remote = ref<Set<string>>(new Set<string>());
 const text = ref('');
-const options = ref<StoryOption[]>([]);
+const options = ref<SelectLine['select']>([]);
 
 function toText(s: string) {
   return s.trim().replace(/\\/g, '');
@@ -88,31 +88,34 @@ function updateLine(line: string, tags: Record<string, string>) {
 }
 
 function nextLine(option?: number) {
-  let line = story.next(option);
-  while (line) {
-    if (line.select) {
+  let l = story.next(option);
+  while (l) {
+    if ((l as SelectLine).select) {
+      const line = l as SelectLine;
       options.value = line.select;
       return;
     }
     options.value = [];
 
-    if (line.tags.classes) {
-      updateClasses(line.tags.classes);
+    const line = l as TextLine;
+    const tags = line.tags as Tags;
+    if (tags.classes) {
+      updateClasses(tags.classes);
     }
 
-    if (line.tags.background !== undefined) {
+    if (tags.background !== undefined) {
       background.value = toText(line.text);
-      const display = line.tags.background.trim();
+      const display = tags.background.trim();
       style.value = display;
-    } else if (line.tags.se !== undefined) {
+    } else if (tags.se !== undefined) {
       playAudio(toText(line.text));
-    } else if (line.tags.audio !== undefined) {
+    } else if (tags.audio !== undefined) {
       updateAudio(toText(line.text));
     } else {
-      updateLine(line.text, line.tags);
+      updateLine(line.text, tags);
       return;
     }
-    line = story.next();
+    l = story.next();
   }
   text.value = '<i>故事结束</i>';
 }

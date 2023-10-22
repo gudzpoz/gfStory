@@ -14,14 +14,14 @@ function resolveBlobImage(s: string) {
 function exportCharacters(characters: CompactCharacter[]) {
   const json = JSON.stringify(characters);
   return `\`\`\`lua global
-print.defineCharacters(${JSON.stringify(json)})
+extern.defineCharacters(${JSON.stringify(json)})
 \`\`\``;
 }
 
 function exportPreloaded(urls: string[]) {
   const content = JSON.stringify(urls);
   return `\`\`\`lua global
-print.preloadResources(${JSON.stringify(content)})
+extern.preloadResources(${JSON.stringify(content)})
 \`\`\`
 `;
 }
