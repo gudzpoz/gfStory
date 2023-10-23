@@ -18,7 +18,7 @@ export interface TextLine extends LineType {
 
 export interface SceneLine extends LineType {
   type: 'scene';
-  scene: 'background' | 'audio';
+  scene: 'background' | 'audio' | 'se';
   media: string;
   style: string;
 }
