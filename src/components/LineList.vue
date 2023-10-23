@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import {
   NButton, NButtonGroup, NCard, NCollapse,
-  NCollapseItem, NIcon, NSpace, NTag,
-  useDialog,
+  NCollapseItem, NIcon, NModal, NMenu,
+  NSpace, NTag, NUpload, useDialog,
+  type MenuOption, type UploadCustomRequestOptions,
 } from 'naive-ui';
 import {
   AddFilled, ContentPasteFilled, DeleteFilled, DownloadFilled,
-  HelpCenterFilled,
-  MoveDownFilled, MoveUpFilled, PeopleFilled, RefreshFilled,
+  HelpCenterFilled, MoveDownFilled, MoveUpFilled, PeopleFilled,
+  RefreshFilled, UploadFilled,
 } from '@vicons/material';
 import {
   computed, h, provide, ref,
@@ -15,10 +16,13 @@ import {
 
 import CharacterList from './character/CharacterList.vue';
 import StoryLineView from './lines/StoryLineView.vue';
+import StoryList from './StoryList.vue';
 import {
   defaultLine, nextId, type GfStory, type TextLine,
 } from '../types/lines';
-import { labelCharactersWithIds } from '../types/character';
+import { labelCharactersWithIds, type Character } from '../types/character';
+import { importMarkdownString } from '../story/compiler';
+import { db } from '../db/media';
 
 const props = defineProps<{
   modelValue: GfStory,
@@ -41,8 +45,8 @@ provide('narrators', computed(() => {
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
   'update:modelValue': [value: GfStory],
-  'export': [value: void],
-  'exportMarkdown': [value: void],
+  'export': [type: 'json' | 'markdown' | 'zip'],
+  'import': [type: 'json' | 'markdown'],
 }>();
 
 const shouldShowCharacterList = ref(false);
@@ -138,6 +142,118 @@ function showHelpDialog() {
     }),
   });
 }
+
+async function importJson(options: UploadCustomRequestOptions) {
+  const { file } = options.file;
+  if (!file) {
+    return;
+  }
+  const story: GfStory = JSON.parse(await file.text());
+  if (!Array.isArray(story.characters) || !Array.isArray(story.lines)) {
+    return;
+  }
+  if (!story.characters.every((c) => c.id && c.name && Array.isArray(c.sprites)
+    && c.sprites.every((s) => s.id && s.name && s.url))) {
+    return;
+  }
+  if (!story.lines.every((l) => l.id && l.type)) {
+    return;
+  }
+  const s = props.modelValue;
+  s.characters.splice(0);
+  s.characters.push(...story.characters);
+  s.lines.splice(0);
+  s.lines.push(...story.lines);
+  emit('update:modelValue', props.modelValue);
+}
+async function importMarkdownFile(markdown: string) {
+  const parsed = importMarkdownString(markdown);
+  if (!parsed) {
+    return;
+  }
+  const s = props.modelValue;
+  parsed.lines.forEach((l) => {
+    // eslint-disable-next-line no-param-reassign
+    l.id = nextId();
+  });
+  (parsed.characters as Character[]).forEach((c) => {
+    // eslint-disable-next-line no-param-reassign
+    c.imported = true;
+  });
+  await db.importResources(parsed.resources);
+  s.lines.splice(0);
+  s.lines.push(...parsed.lines);
+  s.characters.splice(0);
+  s.characters.push(...labelCharactersWithIds(parsed.characters as Character[]));
+  emit('update:modelValue', props.modelValue);
+  lines.value = [];
+  lines.value = props.modelValue.lines;
+}
+async function importMarkdown(options: UploadCustomRequestOptions) {
+  const { file } = options.file;
+  if (!file) {
+    return;
+  }
+  await importMarkdownFile(await file.text());
+}
+const showStorySelect = ref(false);
+async function importStory(file: string) {
+  showStorySelect.value = false;
+  const [, path] = file.split('|');
+  await importMarkdownFile(await fetch(`/stories/${path}`).then((res) => res.text()));
+}
+const ioOptions: MenuOption[] = [
+  {
+    title: '导出',
+    icon: () => h(DownloadFilled),
+    key: 'export',
+    children: [
+      { title: '导出为 JSON', key: 'json' },
+      { title: '导出为 Markdown', key: 'markdown' },
+      { title: '导出为完整压缩包', key: 'zip' },
+    ],
+  },
+  {
+    title: '导入',
+    icon: () => h(UploadFilled),
+    key: 'import',
+    children: [
+      {
+        title: () => h(NUpload, {
+          customRequest: importJson,
+          accept: 'application/json',
+        }, { default: () => '导入 JSON（实验性）' }),
+        key: 'import-json',
+      },
+      {
+        title: () => h(NUpload, {
+          customRequest: importMarkdown,
+          accept: 'text/plain',
+        }, { default: () => '尝试导入 Markdown（更加实验性）' }),
+        key: 'import-markdown',
+      },
+      {
+        title: '尝试导入剧情模拟器 Markdown（更加实验性）',
+        key: 'import-simulator',
+      },
+    ],
+  },
+];
+function doIo(v: string) {
+  switch (v) {
+    case 'json':
+    case 'markdown':
+    case 'zip':
+      emit('update:modelValue', props.modelValue);
+      emit('export', v);
+      break;
+    case 'import-simulator':
+      showStorySelect.value = true;
+      break;
+    default:
+      break;
+  }
+}
 </script>
 
 <template>
@@ -145,49 +261,47 @@ function showHelpDialog() {
     @update:modelValue="(v) => characters = v"
   >
   </character-list>
+  <n-modal v-model:show="showStorySelect" preset="card">
+    <story-list value="" @update:value="importStory"></story-list>
+  </n-modal>
   <n-card class="list-operations">
-    <n-button-group>
-      <n-button @click="showCharacterList" type="warning">
-        <n-icon><people-filled></people-filled></n-icon>编辑角色
-      </n-button>
-      <n-button @click="appendDefaultLine" type="primary">
-        <n-icon><add-filled></add-filled></n-icon>添加节点
-      </n-button>
-      <n-button @click="copyCurrent" type="warning" :disabled="!canMove(-1)"
-        title="复制节点"
-      >
-        <n-icon><content-paste-filled></content-paste-filled></n-icon>
-      </n-button>
-      <n-button @click="removeLine" type="error" :disabled="!canMove(-1)"
-        title="移除当前"
-      >
-        <n-icon><delete-filled></delete-filled></n-icon>
-      </n-button>
-      <n-button @click="moveUp" secondary type="primary" :disabled="!canMove(0)"
-        title="上移"
-      >
-        <n-icon><move-up-filled></move-up-filled></n-icon>
-      </n-button>
-      <n-button @click="moveDown" secondary type="primary" :disabled="!canMove(lines.length - 1)"
-        title="下移"
-      >
-        <n-icon><move-down-filled></move-down-filled></n-icon>
-      </n-button>
-      <n-button @click="emit('update:modelValue', modelValue)" type="warning">
-        <n-icon><refresh-filled></refresh-filled></n-icon>暂存并预览
-      </n-button>
-      <n-button type="primary"
-        @click="emit('update:modelValue', modelValue); emit('exportMarkdown')"
-      >
-        <n-icon><download-filled></download-filled></n-icon>导出 Markdown
-      </n-button>
-      <n-button @click="emit('update:modelValue', modelValue); emit('export')" type="primary">
-        <n-icon><download-filled></download-filled></n-icon>导出故事
-      </n-button>
-      <n-button @click="showHelpDialog" type="info" title="帮助">
-        <n-icon><help-center-filled></help-center-filled></n-icon>
-      </n-button>
-    </n-button-group>
+    <n-space :wrap="false" justify="start" style="width: fit-content;">
+      <n-button-group>
+        <n-button @click="showCharacterList" type="warning">
+          <n-icon><people-filled></people-filled></n-icon>编辑角色
+        </n-button>
+        <n-button @click="appendDefaultLine" type="primary">
+          <n-icon><add-filled></add-filled></n-icon>添加节点
+        </n-button>
+        <n-button @click="copyCurrent" type="warning" :disabled="!canMove(-1)"
+          title="复制节点"
+        >
+          <n-icon><content-paste-filled></content-paste-filled></n-icon>
+        </n-button>
+        <n-button @click="removeLine" type="error" :disabled="!canMove(-1)"
+          title="移除当前"
+        >
+          <n-icon><delete-filled></delete-filled></n-icon>
+        </n-button>
+        <n-button @click="moveUp" secondary type="primary" :disabled="!canMove(0)"
+          title="上移"
+        >
+          <n-icon><move-up-filled></move-up-filled></n-icon>
+        </n-button>
+        <n-button @click="moveDown" secondary type="primary" :disabled="!canMove(lines.length - 1)"
+          title="下移"
+        >
+          <n-icon><move-down-filled></move-down-filled></n-icon>
+        </n-button>
+        <n-button @click="emit('update:modelValue', modelValue)" type="warning">
+          <n-icon><refresh-filled></refresh-filled></n-icon>暂存并预览
+        </n-button>
+        <n-button @click="showHelpDialog" type="info" title="帮助">
+          <n-icon><help-center-filled></help-center-filled></n-icon>
+        </n-button>
+      </n-button-group>
+      <n-menu @update:value="doIo" mode="horizontal" :options="ioOptions"></n-menu>
+    </n-space>
   </n-card>
   <n-collapse display-directive="if" accordion v-model:expanded-names="names">
     <n-collapse-item v-for="line in lines" :key="line.id" :name="line.id">

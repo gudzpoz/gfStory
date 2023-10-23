@@ -57,7 +57,22 @@ async function exportMarkdown() {
   }), 'story.md');
 }
 
-async function exportStory() {
+async function exportJson() {
+  saveAs(new Blob([JSON.stringify(story)], {
+    type: 'application/json',
+  }), 'story.json');
+}
+
+async function exportStory(format: string) {
+  if (format === 'markdown') {
+    await exportMarkdown();
+    return;
+  }
+  if (format === 'json') {
+    exportJson();
+    return;
+  }
+
   const root = new JSZip();
   const zip = root.folder('story');
   if (!zip) {
@@ -109,7 +124,6 @@ async function exportStory() {
             <line-list :modelValue="story"
               @update:modelValue="updateStory"
               @export="exportStory"
-              @export-markdown="exportMarkdown"
             >
             </line-list>
           </n-layout-content>

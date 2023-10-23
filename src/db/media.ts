@@ -114,6 +114,22 @@ export class MediaDatabase extends Dexie {
     delete this.cache[type][name];
     return this[type].delete(name);
   }
+
+  importResources(resources: string[]) {
+    return Promise.all(resources.filter((s) => s.startsWith('http')).map((s) => {
+      const url = new URL(s);
+      const { pathname } = url;
+      const name = pathname.substring(pathname.lastIndexOf('/') + 1);
+      const media = { name, blob: s };
+      if (pathname.startsWith('/audio/')) {
+        return this.audio.put(media);
+      }
+      if (pathname.startsWith('/images/background/')) {
+        return this.background.put(media);
+      }
+      return this.sprite.put(media);
+    }));
+  }
 }
 
 export const db = new MediaDatabase();

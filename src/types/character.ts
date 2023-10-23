@@ -96,7 +96,7 @@ export function labelCharactersWithIds(characters: Character[]): Character[] {
     return {
       id: `${id}`,
       name: c.name,
-      imported: false,
+      imported: c.imported ?? false,
       sprites: c.sprites.map((s) => {
         id += 1;
         return {

@@ -58,7 +58,7 @@ export class StoryInterpreter {
   }
 
   async reload(chunk: string) {
-    this.story.loadStory(chunk, undefined, {
+    await this.story.loadStory(chunk, undefined, {
       defineCharacters: (characters: string) => {
         this.characters = JSON.parse(characters);
         this.characters.forEach((character) => {

@@ -41,9 +41,8 @@ function renderLabel(o: CascaderOption) {
   });
 }
 
-// eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
-  (event: 'update:modelValue', modelValue: string): void,
+  'update:modelValue': [modelValue: string],
 }>();
 
 const remote = ref(!!props.remoteRecord[props.modelValue]);

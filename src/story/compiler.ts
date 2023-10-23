@@ -1,11 +1,11 @@
 import { BrocatelCompiler } from '@brocatel/mdc';
 
 import { type Character, type CharacterSprite } from '../types/character';
-import { type GfStory } from '../types/lines';
+import { type GfStory, type SceneLine, type TextLine } from '../types/lines';
 import { db } from '../db/media';
 
-type CompactSprite = Omit<CharacterSprite, 'id'> & { id?: unknown };
-type CompactCharacter = Omit<Omit<Omit<Character, 'sprites'>, 'imported'> & { sprites: CompactSprite[] }, 'id'>;
+export type CompactSprite = Omit<CharacterSprite, 'id'> & { id?: unknown };
+export type CompactCharacter = Omit<Omit<Omit<Character, 'sprites'>, 'imported'> & { sprites: CompactSprite[] }, 'id'>;
 
 function resolveBlobImage(s: string) {
   return db.toDataUrl(s);
@@ -62,6 +62,58 @@ ${exportPreloaded(preloaded)}
 
 ${segments.join('\n\n')}
 `;
+}
+
+function parseLine(line: string) {
+  const tags: Record<string, string> = {};
+  let l = line;
+  while (l.startsWith(':')) {
+    const result = /^:(\w+)\[([^\]]*)\]\s+/.exec(l);
+    if (!result) {
+      break;
+    }
+    l = l.substring(result[0].length).trim();
+    // eslint-disable-next-line prefer-destructuring
+    tags[result[1]] = result[2];
+  }
+  const type = ['background', 'se', 'audio'].find((t) => tags[t] !== undefined);
+  if (type) {
+    return {
+      type: 'scene',
+      scene: type,
+      media: l.replace(/\\/g, ''),
+      style: tags[type],
+    } as SceneLine;
+  }
+  return {
+    type: 'text',
+    remote: Object.fromEntries((tags.remote ?? '').split('|').filter((s) => s !== '')
+      .map((s) => [s, true])),
+    narrator: tags.narrator ?? '',
+    narratorColor: tags.color ?? '',
+    sprites: (tags.sprites ?? '').split('|').filter((s) => s !== ''),
+    text: l.replace(/\\/g, ''),
+  } as TextLine;
+}
+
+export function importMarkdownString(markdown: string) {
+  const markdownLines = markdown.split('\n');
+  const characterLine = markdownLines.find((s) => s.startsWith('extern.defineCharacters'));
+  const resourceLine = markdownLines.find((s) => s.startsWith('extern.preloadResources'));
+  if (!characterLine || !resourceLine) {
+    return null;
+  }
+  const characters = (JSON.parse(JSON.parse(
+    characterLine.substring('extern.defineCharacters'.length + 1, characterLine.length - 1),
+  )) as CompactCharacter[]).filter((s) => s.name !== '');
+  const resources = JSON.parse(JSON.parse(
+    resourceLine.substring('extern.preloadResources'.length + 1, resourceLine.length - 1),
+  )) as string[];
+  const lines = markdownLines
+    .map((s) => s.replace(/.*`/g, ''))
+    .filter((s) => s.startsWith(':'))
+    .map(parseLine);
+  return { lines, characters, resources };
 }
 
 const compiler = new BrocatelCompiler({});

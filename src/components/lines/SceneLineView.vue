@@ -34,7 +34,7 @@ if (!props.modelValue.scene) {
         <n-radio-button value="cover">
           <n-tooltip trigger="hover">
             <template #trigger>
-              <n-button>图片填满页面</n-button>
+              图片填满页面
             </template>
             可能无法完整显示图片
           </n-tooltip>
@@ -42,7 +42,7 @@ if (!props.modelValue.scene) {
         <n-radio-button value="contain">
           <n-tooltip trigger="hover">
             <template #trigger>
-              <n-button>图片完整显示</n-button>
+              图片完整显示
             </template>
             可能有黑边
           </n-tooltip>

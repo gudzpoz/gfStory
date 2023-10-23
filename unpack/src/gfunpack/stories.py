@@ -175,7 +175,7 @@ class StoryTranspiler:
             s = c.get(str(sprite))
             if s is not None:
                 return {
-                    'name': sprite,
+                    'name': str(sprite),
                     'url': f'/images/{s.path}',
                     'scale': -1,
                     'center': (-1, -1),
