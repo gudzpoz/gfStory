@@ -122,4 +122,8 @@ async function exportStory() {
   </n-config-provider>
 </template>
 
-<style scoped></style>
+<style>
+.n-layout-toggle-button {
+  z-index: 3;
+}
+</style>
