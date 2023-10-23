@@ -123,7 +123,7 @@ async function exportStory() {
 </template>
 
 <style>
-.n-layout-toggle-button {
+#app .n-layout-sider .n-layout-toggle-button {
   z-index: 3;
 }
 </style>

@@ -1,1 +1,5 @@
-Access-Control-Allow-Origin: *
+/*
+  Access-Control-Allow-Origin: *
+
+/stories/*
+  Content-Type: text/plain
