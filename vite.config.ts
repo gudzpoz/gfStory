@@ -18,6 +18,7 @@ export default defineConfig({
   ],
   build: {
     outDir: BUILD_VIEWER ? 'viewer' : 'dist',
+    copyPublicDir: !BUILD_VIEWER,
     rollupOptions: {
       input: BUILD_VIEWER ? {
         viewer: fileURLToPath(new URL('./viewer.html', import.meta.url)),
