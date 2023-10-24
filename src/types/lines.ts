@@ -21,6 +21,7 @@ export interface SceneLine extends LineType {
   scene: 'background' | 'audio' | 'se';
   media: string;
   style: string;
+  classes?: string[];
 }
 
 export type Line = TextLine | SceneLine;
@@ -33,7 +34,9 @@ export interface GfStory {
 let id = 0;
 export function initUniqueId(previous: GfStory) {
   if (previous.lines.length > 0) {
-    id = previous.lines.map((line) => parseInt(line.id, 10)).reduce((a, b) => Math.max(a, b));
+    id = previous.lines.map((line) => parseInt(line.id, 10))
+      .filter((n) => Number.isFinite(n))
+      .reduce((a, b) => Math.max(a, b), 0);
   }
 }
 export function nextId() {

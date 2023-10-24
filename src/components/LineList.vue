@@ -218,6 +218,7 @@ const ioOptions: MenuOption[] = [
     icon: () => h(UploadFilled),
     key: 'import',
     children: [
+      { title: '清空内容', key: 'reset' },
       {
         title: () => h(NUpload, {
           customRequest: importJson,
@@ -250,6 +251,15 @@ function doIo(v: string) {
     case 'import-simulator':
       showStorySelect.value = true;
       break;
+    case 'reset': {
+      const s = props.modelValue;
+      s.characters.splice(0);
+      s.lines.splice(0);
+      lines.value = [];
+      lines.value = s.lines;
+      emit('update:modelValue', props.modelValue);
+      break;
+    }
     default:
       break;
   }

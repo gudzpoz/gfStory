@@ -49,7 +49,7 @@ ${line.text}`;
       case 'scene': {
         const url = await resolveImage(line.media);
         preloaded.push(url);
-        return `:${line.scene}[${line.style}] ${url}`;
+        return `:${line.scene}[${line.style}] :classes[${line.classes?.join(' ') ?? ''}] ${url}`;
       }
       default:
         return '';
@@ -83,6 +83,7 @@ function parseLine(line: string) {
       scene: type,
       media: l.replace(/\\/g, ''),
       style: tags[type],
+      classes: tags.classes?.split(' ')?.filter((s) => s !== ''),
     } as SceneLine;
   }
   return {
