@@ -271,10 +271,20 @@ def get_block_list():
 
 def get_extra_anniversary_stories(destination: pathlib.Path):
     directory = pathlib.Path('GFLData', 'ch', 'text', 'avgtxt', 'anniversary')
+    old_directory = pathlib.Path('GirlsFrontlineData', 'zh-CN', 'asset_textes', 'avgtxt', 'anniversary')
     if not pathlib.Path('GFLData').is_dir():
         subprocess.run([
             'git', 'clone', 'https://github.com/randomqwerty/GFLData.git',
         ], stdout=subprocess.DEVNULL).check_returncode()
+    if not pathlib.Path('GirlsFrontlineData').is_dir():
+        subprocess.run([
+            'git', 'clone', 'https://github.com/Dimbreath/GirlsFrontlineData.git',
+        ], stdout=subprocess.DEVNULL).check_returncode()
+    if not destination.joinpath('anniversary4').is_dir():
+        subprocess.run([
+            'git', 'checkout', '41793e107cb4697de10ac5bf507f1909f1c47030',
+        ], cwd='GirlsFrontlineData').check_returncode()
+        shutil.copytree(old_directory, destination.joinpath('anniversary4'))
     if not destination.joinpath('anniversary5').is_dir():
         subprocess.run([
             'git', 'checkout', '9d0dae0066ccf1bc9e32abf35401d5ef7eaf7746',

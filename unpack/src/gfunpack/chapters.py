@@ -350,6 +350,7 @@ class Chapters:
         all_chapters['bonding'] = self._categorize_bonding_stories()
         all_chapters['upgrading'] = self._categorize_upgrading_stories()
         all_chapters['anniversary'] = self._categorize_anniversary()
+        all_chapters['anniversary4'] = self._categorize_anniversary('anniversary4')
         all_chapters['anniversary5'] = self._categorize_anniversary('anniversary5')
         all_chapters['anniversary6'] = self._categorize_anniversary('anniversary6')
         all_chapters['skin'] = self._categorize_skins()
