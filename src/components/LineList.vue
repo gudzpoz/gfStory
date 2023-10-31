@@ -172,15 +172,21 @@ async function importMarkdownFile(markdown: string) {
     return;
   }
   const s = props.modelValue;
+  const mapping = await db.importResources(parsed.resources);
   parsed.lines.forEach((l) => {
     // eslint-disable-next-line no-param-reassign
     l.id = nextId();
+    if (l.type === 'scene') {
+      if (mapping[l.media]) {
+        // eslint-disable-next-line no-param-reassign
+        l.media = mapping[l.media];
+      }
+    }
   });
   (parsed.characters as Character[]).forEach((c) => {
     // eslint-disable-next-line no-param-reassign
     c.imported = true;
   });
-  await db.importResources(parsed.resources);
   s.lines.splice(0);
   s.lines.push(...parsed.lines);
   s.characters.splice(0);

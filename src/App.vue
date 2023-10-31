@@ -15,7 +15,7 @@ import {
   defaultLine, initUniqueId, type GfStory,
 } from './types/lines';
 import { compileMarkdown, linesToMarkdown } from './story/compiler';
-import { db, MEDIA_TYPES } from './db/media';
+import { db } from './db/media';
 
 const chunk = ref('');
 
@@ -84,13 +84,16 @@ async function exportStory(format: string) {
       url.pathname = s;
       return url.toString();
     }
-    const [type, name] = s.split(':', 2);
+    const [type, name] = db.splitMediaUrl(s);
+    if (!type) {
+      return s;
+    }
     const directory = zip.folder(type);
     if (!directory) {
       throw new Error('unable to write to zip');
     }
     if (!directory.file(name)) {
-      const file = await db[type as typeof MEDIA_TYPES[number]].where('name').equals(name).first();
+      const file = await db.findRawMediaByName(type, name);
       if (!file) {
         throw new Error('no such media found');
       }

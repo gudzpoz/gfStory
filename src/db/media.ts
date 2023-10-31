@@ -22,7 +22,14 @@ export interface Media extends RawMedia {
   value: string;
 }
 
+/**
+ * Media urls are strings like `` `${type}:${name}` ``.
+ */
 export type MediaUrl = string;
+
+function isMediaUrl(s: MediaUrl) {
+  return !s.startsWith('/') && s.includes(':') && !s.toLowerCase().startsWith('http');
+}
 
 export class MediaDatabase extends Dexie {
   private audio!: Table<RawMedia>;
@@ -50,11 +57,6 @@ export class MediaDatabase extends Dexie {
     return this.refs[type];
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  getMediaUrl(type: typeof MEDIA_TYPES[number], name: string): MediaUrl {
-    return `${type}:${name}`;
-  }
-
   /**
    * Calls the listener whenever the database updates.
    *
@@ -68,7 +70,7 @@ export class MediaDatabase extends Dexie {
       .subscribe((raw) => {
         items.value = raw.map((r) => ({
           type,
-          value: this.getMediaUrl(type, r.name),
+          value: `${type}:${r.name}`,
           ...r,
         }));
       });
@@ -85,17 +87,15 @@ export class MediaDatabase extends Dexie {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  splitMediaUrl(s: MediaUrl): [typeof MEDIA_TYPES[number], string] {
+  splitMediaUrl(s: MediaUrl): [null | typeof MEDIA_TYPES[number], string] {
+    if (!isMediaUrl(s)) {
+      return [null, s];
+    }
     return s.split(':', 2) as [typeof MEDIA_TYPES[number], string];
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  isMediaUrl(s: MediaUrl) {
-    return !s.startsWith('/') && s.includes(':');
-  }
-
   async toDataUrl(s: MediaUrl) {
-    if (!this.isMediaUrl(s)) {
+    if (!isMediaUrl(s)) {
       return s;
     }
     const [t, name] = this.splitMediaUrl(s);
@@ -110,25 +110,37 @@ export class MediaDatabase extends Dexie {
     return this.getMediaDataUrl(type, media);
   }
 
+  findRawMediaByName(type: typeof MEDIA_TYPES[number], name: string) {
+    return this[type].where('name').equals(name).first();
+  }
+
+  async addMedia(type: typeof MEDIA_TYPES[number], name: string, blob: string | Blob) {
+    const media: RawMedia = { name, blob };
+    await this[type].put(media);
+    return media;
+  }
+
   deleteMedia(type: typeof MEDIA_TYPES[number], name: string) {
     delete this.cache[type][name];
     return this[type].delete(name);
   }
 
-  importResources(resources: string[]) {
-    return Promise.all(resources.filter((s) => s.startsWith('http')).map((s) => {
-      const url = new URL(s);
-      const { pathname } = url;
+  async importResources(resources: string[]) {
+    const pairs = await Promise.all(resources.map(async (s) => {
+      const pathname = s.startsWith('http') ? new URL(s).pathname : s;
       const name = pathname.substring(pathname.lastIndexOf('/') + 1);
-      const media = { name, blob: s };
+      let type: undefined | (typeof MEDIA_TYPES)[number];
       if (pathname.startsWith('/audio/')) {
-        return this.audio.put(media);
+        type = 'audio';
+      } else if (pathname.startsWith('/images/background/')) {
+        type = 'background';
+      } else {
+        type = 'sprite';
       }
-      if (pathname.startsWith('/images/background/')) {
-        return this.background.put(media);
-      }
-      return this.sprite.put(media);
+      const m = await this.addMedia(type, name, s);
+      return [s, `${type}:${m.name}`];
     }));
+    return Object.fromEntries(pairs) as Record<string, string>;
   }
 }
 

@@ -55,7 +55,7 @@ function upload(options: UploadCustomRequestOptions) {
     return;
   }
   options.onProgress({ percent: 0 });
-  db[props.type].add({ name, blob: file })
+  db.addMedia(props.type, name, file)
     .then(() => options.onFinish())
     .catch(() => options.onError());
   options.onProgress({ percent: 10 });
@@ -69,10 +69,7 @@ function importPreset(preset: Preset) {
   const url = `${
     props.type === 'audio' ? AUDIO_PATH_PREFIX : IMAGE_PATH_PREFIX
   }${preset.url}`;
-  db[props.type].add({
-    name: url.substring(url.lastIndexOf('/') + 1),
-    blob: url,
-  })
+  db.addMedia(props.type, url.substring(url.lastIndexOf('/') + 1), url)
     .then(() => notify.info({
       content: `已导入 ${preset.url}`,
     }))

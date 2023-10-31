@@ -18,16 +18,15 @@ import {
 
 const chunk = ref('');
 const loading = ref(false);
-function switchStory(path: string) {
+async function switchStory(path: string) {
   loading.value = true;
-  fetch(path).then((res) => res.text()).then(compileMarkdown)
-    .then((compiled) => {
-      loading.value = false;
-      chunk.value = compiled;
-    })
-    .catch(() => {
-      loading.value = false;
-    });
+  try {
+    const markdown = await fetch(path).then((res) => res.text());
+    chunk.value = await compileMarkdown(markdown);
+    loading.value = false;
+  } catch (e) {
+    loading.value = false;
+  }
 }
 
 const showMenu = ref(false);
