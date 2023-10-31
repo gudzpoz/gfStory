@@ -52,6 +52,9 @@ function emitClick(event: MouseEvent) {
   if (props.options.length > 0) {
     return;
   }
+  if ((event.target as HTMLElement).nodeName === 'BUTTON') {
+    return;
+  }
   const dx = clickX - event.clientX;
   const dy = clickY - event.clientY;
   const distance = dx * dx + dy * dy;
@@ -120,7 +123,7 @@ watch(() => props.history, (history) => {
         </sprite-image-view>
       </transition-group>
       <div class="options" v-show="options.length > 0 && !history">
-        <button v-html="option.option" v-for="option in options" :key="option.option.text"
+        <button v-html="option.option.text" v-for="option in options" :key="option.option.text"
           @click="emit('choose', option.key)"
         >
         </button>
@@ -232,8 +235,9 @@ watch(() => props.history, (history) => {
   position: relative;
   display: block;
   margin: 5px;
+  padding: 0.8em;
   line-height: 1em;
-  width: 75vw;
+  width: 75%;
   max-width: 42em;
   background-color: #0006;
   color: white;
