@@ -13,7 +13,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@brocatel/mdc": "^0.3.2",
+    "@brocatel/mdc": "^0.3.3",
     "@brocatel/mde": "^0.3.2",
     "@ckeditor/ckeditor5-alignment": "^39.0.2",
     "@ckeditor/ckeditor5-basic-styles": "^39.0.2",
