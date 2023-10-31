@@ -152,7 +152,7 @@ watch(() => props.history, (history) => {
           </div>
         </div>
         <div class="corner">
-          <span class="loaded-circle" v-html="circleSvg" />
+          <span class="loaded-circle" v-html="circleSvg" v-show="!textAnimating" />
           <span v-html="gfSystemSvg" />
         </div>
       </div>
@@ -182,6 +182,9 @@ watch(() => props.history, (history) => {
   height: 45px;
   position: relative;
   filter: drop-shadow(1px 1px 1px #fff8);
+}
+.story-background .button-slot button:not(:first-child) {
+  margin-left: 1em;
 }
 .story-background .button-slot button:hover {
   box-shadow: 0 0 3px white;
