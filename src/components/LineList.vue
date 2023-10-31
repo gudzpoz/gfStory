@@ -2,6 +2,7 @@
 import {
   NButton, NButtonGroup, NCard, NCollapse,
   NCollapseItem, NIcon, NModal, NMenu,
+  NPerformantEllipsis,
   NSpace, NTag, NUpload, useDialog,
   type MenuOption, type UploadCustomRequestOptions,
 } from 'naive-ui';
@@ -113,11 +114,10 @@ function copyCurrent() {
   }
 }
 
-function pruneHtml(html: string, limit = 10) {
+function pruneHtml(html: string) {
   const container = document.createElement('div');
   container.innerHTML = html;
-  const text = container.innerText;
-  return text.length > limit ? `${text.substring(0, limit)}...` : text;
+  return container.innerText;
 }
 
 function canMove(end: number) {
@@ -323,18 +323,18 @@ function doIo(v: string) {
     <n-collapse-item v-for="line in lines" :key="line.id" :name="line.id">
       <story-line-view :modelValue="line"></story-line-view>
       <template #header>
-        <n-space v-if="line.type === 'text'">
-          <n-tag type="success">文本节点</n-tag>
+        <div v-if="line.type === 'text'" class="line-header">
           <n-tag v-if="line.narrator !== ''" type="info">{{ line.narrator }}</n-tag>
-          <span class="text-preview" v-text="pruneHtml(line.text)"></span>
-        </n-space>
-        <n-space v-else>
-          <n-tag type="success">
-            {{ '功能节点' }}
-          </n-tag>
-          <n-tag type="warning">{{ line.scene === 'background' ? '背景图' : '背景音乐' }}</n-tag>
-          <span class="text-preview">{{ line.media }}</span>
-        </n-space>
+          <n-performant-ellipsis class="text-preview">
+            {{ pruneHtml(line.text) }}
+          </n-performant-ellipsis>
+        </div>
+        <div v-else class="line-header">
+          <n-tag type="success">{{ line.scene === 'background' ? '背景图' : '背景音乐' }}</n-tag>
+          <n-performant-ellipsis class="text-preview">
+            {{ line.media }}
+          </n-performant-ellipsis>
+        </div>
       </template>
     </n-collapse-item>
   </n-collapse>
@@ -343,6 +343,17 @@ function doIo(v: string) {
 <style>
 .n-collapse {
   width: auto;
+}
+.n-collapse .n-collapse-item__header-main {
+  width: 100%;
+}
+.n-collapse .n-collapse-item__header-main .line-header {
+  width: calc(100% - 24px);
+  display: inline-flex;
+  flex-wrap: nowrap;
+}
+.n-collapse .n-collapse-item__header-main .line-header > .n-tag {
+  margin-right: 1em;
 }
 .n-collapse .n-collapse-item {
   --n-title-padding: 0;
