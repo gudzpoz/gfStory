@@ -6,7 +6,7 @@ import {
 import { HistoryFilled, MenuFilled } from '@vicons/material';
 
 import StoryScene from './StoryScene.vue';
-import { StoryInterpreter, type SpriteImage, type Tags } from '../story/interpreter';
+import { StoryInterpreter, type SpriteImage, type Tags } from '../../story/interpreter';
 
 const props = defineProps<{
   chunk?: string,

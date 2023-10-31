@@ -9,12 +9,12 @@ import {
   onMounted, ref, watch,
 } from 'vue';
 
-import StoryList from './components/StoryList.vue';
-import StoryTeller from './components/StoryTeller.vue';
-import { compileMarkdown } from './story/compiler';
+import StoryList from './StoryList.vue';
+import StoryTeller from './StoryTeller.vue';
+import { compileMarkdown } from '../../story/compiler';
 import {
   STORY_PATH_PREFIX,
-} from './types/assets';
+} from '../../types/assets';
 
 const chunk = ref('');
 const loading = ref(false);

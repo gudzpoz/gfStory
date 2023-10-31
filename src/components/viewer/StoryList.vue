@@ -7,9 +7,9 @@ import { h } from 'vue';
 
 import {
   type ChapterType, type GfChaptersInfo,
-} from '../types/assets';
+} from '../../types/assets';
 
-import jsonChapterPresets from '../assets/chapters.json';
+import jsonChapterPresets from '../../assets/chapters.json';
 
 const chapterPresets: GfChaptersInfo = jsonChapterPresets;
 

@@ -15,15 +15,15 @@ import {
   computed, h, provide, ref,
 } from 'vue';
 
-import CharacterList from './character/CharacterList.vue';
-import StoryLineView from './lines/StoryLineView.vue';
-import StoryList from './StoryList.vue';
+import CharacterList from '../character/CharacterList.vue';
+import StoryLineView from './StoryLineView.vue';
+import StoryList from '../viewer/StoryList.vue';
 import {
   defaultLine, nextId, type GfStory, type TextLine,
-} from '../types/lines';
-import { labelCharactersWithIds, type Character } from '../types/character';
-import { importMarkdownString } from '../story/compiler';
-import { db } from '../db/media';
+} from '../../types/lines';
+import { labelCharactersWithIds, type Character } from '../../types/character';
+import { importMarkdownString } from '../../story/compiler';
+import { db } from '../../db/media';
 
 const props = defineProps<{
   modelValue: GfStory,

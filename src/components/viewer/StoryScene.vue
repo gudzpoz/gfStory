@@ -4,15 +4,16 @@ import {
   nextTick, onMounted, ref, watch,
 } from 'vue';
 
-import SpriteImageView from './media/SpriteImage.vue';
-import type { SpriteImage } from '../story/interpreter';
+import AnimatedText from './AnimatedText.vue';
+import SpriteImageView from '../media/SpriteImage.vue';
+import type { SpriteImage } from '../../story/interpreter';
 
 // eslint-disable-next-line import/no-unresolved
-import circleSvg from '../assets/circle.svg?raw';
+import circleSvg from '../../assets/circle.svg?raw';
 // eslint-disable-next-line import/no-unresolved
-import gfSystemSvg from '../assets/G.F.system.svg?raw';
+import gfSystemSvg from '../../assets/G.F.system.svg?raw';
 // eslint-disable-next-line import/no-unresolved
-import boxLayerSvg from '../assets/box-layer.svg?raw';
+import boxLayerSvg from '../../assets/box-layer.svg?raw';
 
 const boxLayerSvgUrl = `url("${
   URL.createObjectURL(new Blob([boxLayerSvg], {
@@ -36,6 +37,7 @@ const props = defineProps<{
   history?: [string, string][];
 }>();
 const textBox = ref<HTMLDivElement>();
+const textAnimating = ref(false);
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
@@ -48,6 +50,13 @@ function setDownPosition(event: MouseEvent) {
   clickX = event.clientX;
   clickY = event.clientY;
 }
+function next() {
+  if (textAnimating.value) {
+    textAnimating.value = false;
+  } else {
+    emit('click');
+  }
+}
 function emitClick(event: MouseEvent) {
   if ((event.target as HTMLElement).nodeName === 'BUTTON') {
     return;
@@ -56,7 +65,7 @@ function emitClick(event: MouseEvent) {
   const dy = clickY - event.clientY;
   const distance = dx * dx + dy * dy;
   if (distance < 9) {
-    emit('click');
+    next();
   }
 }
 
@@ -74,7 +83,7 @@ onMounted(() => {
     }
     if (document.activeElement?.tagName === 'BODY') {
       if (e.key === 'Enter' || e.key === ' ') {
-        emit('click');
+        next();
       }
     }
   });
@@ -131,8 +140,9 @@ watch(() => props.history, (history) => {
           <div class="narrator-corner"></div>
         </div>
         <div ref="textBox" class="text" :style="{ height: textHeight }">
-          <div v-if="!history" v-html="textHtml"></div>
-          <div v-else>
+          <animated-text v-show="!history" :html="textHtml" v-model:animating="textAnimating">
+          </animated-text>
+          <div v-if="history">
             <table class="history-lines">
               <tr v-for="line, i in history!" :key="i">
                 <td v-html="line[0]"></td>
@@ -275,6 +285,9 @@ watch(() => props.history, (history) => {
   background-size: 4px 4px;
   clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 18px, 258px 18px, 240px 0);
 
+  /* TODO: Decide what fonts to use.
+   * On Firefox, using online fonts with AnimatedText seems to cause flickering text.
+   */
   font-family: 'Noto Sans SC', sans-serif;
   color: white;
 }

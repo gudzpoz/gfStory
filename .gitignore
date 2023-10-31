@@ -28,7 +28,7 @@ coverage
 *.sw?
 
 # Builds
-viewer/
+/viewer/
 public/viewer.html
 public/audio
 public/images

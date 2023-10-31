@@ -9,8 +9,8 @@ import {
 } from 'naive-ui';
 import { ref } from 'vue';
 
-import LineList from './components/LineList.vue';
-import StoryTeller from './components/StoryTeller.vue';
+import LineList from './components/lines/LineList.vue';
+import StoryTeller from './components/viewer/StoryTeller.vue';
 import {
   defaultLine, initUniqueId, type GfStory,
 } from './types/lines';
