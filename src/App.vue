@@ -80,9 +80,7 @@ async function exportStory(format: string) {
   }
   const compiled = await compileMarkdown(await linesToMarkdown(story, async (s) => {
     if (!s.includes(':')) {
-      const url = new URL(window.location.toString());
-      url.pathname = s;
-      return url.toString();
+      return new URL(s, document.baseURI).href;
     }
     const [type, name] = db.splitMediaUrl(s);
     if (!type) {
@@ -98,6 +96,9 @@ async function exportStory(format: string) {
         throw new Error('no such media found');
       }
       if (typeof file.blob === 'string') {
+        if (file.blob.startsWith('/')) {
+          return new URL(file.blob, document.baseURI).href;
+        }
         return file.blob;
       }
       directory.file(name, file.blob);
