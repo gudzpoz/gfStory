@@ -99,6 +99,9 @@ function nextLine(option?: number) {
     showingHistory.value = undefined;
     return;
   }
+  if (option === undefined && options.value.length > 0) {
+    return;
+  }
 
   let l = story.next(option);
   while (l) {

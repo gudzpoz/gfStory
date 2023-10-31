@@ -49,9 +49,6 @@ function setDownPosition(event: MouseEvent) {
   clickY = event.clientY;
 }
 function emitClick(event: MouseEvent) {
-  if (props.options.length > 0) {
-    return;
-  }
   if ((event.target as HTMLElement).nodeName === 'BUTTON') {
     return;
   }
