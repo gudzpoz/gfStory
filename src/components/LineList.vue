@@ -329,10 +329,16 @@ function doIo(v: string) {
             {{ pruneHtml(line.text) }}
           </n-performant-ellipsis>
         </div>
-        <div v-else class="line-header">
+        <div v-else-if="line.type === 'scene'" class="line-header">
           <n-tag type="success">{{ line.scene === 'background' ? '背景图' : '背景音乐' }}</n-tag>
           <n-performant-ellipsis class="text-preview">
             {{ line.media }}
+          </n-performant-ellipsis>
+        </div>
+        <div v-else class="line-header">
+          <n-tag type="warning">选项</n-tag>
+          <n-performant-ellipsis class="text-preview">
+            <n-tag v-for="o in line.options" :key="o.key">{{ o.key }}</n-tag>
           </n-performant-ellipsis>
         </div>
       </template>
@@ -373,5 +379,8 @@ function doIo(v: string) {
 }
 .text-preview {
   line-height: 2em;
+}
+.text-preview .n-tag:not(:first-child) {
+  margin-left: 0.5em;
 }
 </style>

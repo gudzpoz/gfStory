@@ -1,6 +1,6 @@
 import type { Character } from './character';
 
-export const LINE_TYPES = ['text', 'scene'] as const;
+export const LINE_TYPES = ['text', 'scene', 'option'] as const;
 
 interface LineType {
   type: typeof LINE_TYPES[number];
@@ -24,7 +24,12 @@ export interface SceneLine extends LineType {
   classes?: string[];
 }
 
-export type Line = TextLine | SceneLine;
+export interface OptionLine extends LineType {
+  type: 'option';
+  options: { key: string, value: string }[];
+}
+
+export type Line = TextLine | SceneLine | OptionLine;
 
 export interface GfStory {
   characters: Character[];

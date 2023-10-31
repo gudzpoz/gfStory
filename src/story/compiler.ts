@@ -51,6 +51,8 @@ ${line.text}`;
         preloaded.push(url);
         return `:${line.scene}[${line.style}] :classes[${line.classes?.join(' ') ?? ''}] ${url}`;
       }
+      case 'option':
+        return line.options.map((s) => `- ${s.key}`).join('\n');
       default:
         return '';
     }

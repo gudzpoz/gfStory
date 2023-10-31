@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { NTabs, NTabPane } from 'naive-ui';
 
+import OptionLineView from './OptionLineView.vue';
 import SceneLineView from './SceneLineView.vue';
 import TextLineView from './TextLineView.vue';
-import type { Line, SceneLine, TextLine } from '../../types/lines';
+import type {
+  Line, OptionLine, SceneLine, TextLine,
+} from '../../types/lines';
 
 defineProps<{
   modelValue: Line,
@@ -18,6 +21,9 @@ defineProps<{
     </n-tab-pane>
     <n-tab-pane name="scene" tab="场景">
       <scene-line-view :modelValue="(modelValue as SceneLine)"></scene-line-view>
+    </n-tab-pane>
+    <n-tab-pane name="option" tab="选项">
+      <option-line-view :modelValue="(modelValue as OptionLine)"></option-line-view>
     </n-tab-pane>
   </n-tabs>
 </template>
