@@ -3,7 +3,7 @@ import type { SelectLine, TextLine } from '@brocatel/mdc';
 import {
   computed, onUnmounted, ref, watch,
 } from 'vue';
-import { MenuFilled } from '@vicons/material';
+import { HistoryFilled, MenuFilled } from '@vicons/material';
 
 import StoryScene from './StoryScene.vue';
 import { StoryInterpreter, type SpriteImage, type Tags } from '../story/interpreter';
@@ -32,9 +32,15 @@ const sprites = ref<SpriteImage[]>([]);
 const remote = ref<Set<string>>(new Set<string>());
 const text = ref('');
 const options = ref<SelectLine['select']>([]);
+const history: [string, string][] = [];
 
 function toText(s: string) {
   return s.trim().replace(/\\/g, '');
+}
+
+const showingHistory = ref<[string, string][]>();
+function showHistory() {
+  showingHistory.value = history;
 }
 
 function updateClasses(classString: string) {
@@ -85,9 +91,15 @@ function updateLine(line: string, tags: Record<string, string>) {
     remote.value = new Set(tags.remote.split('|').map(toText));
   }
   text.value = line;
+  history.push([narrator.value, line]);
 }
 
 function nextLine(option?: number) {
+  if (showingHistory.value) {
+    showingHistory.value = undefined;
+    return;
+  }
+
   let l = story.next(option);
   while (l) {
     if ((l as SelectLine).select) {
@@ -143,6 +155,7 @@ async function updateStory(chunk?: string) {
   options.value = [];
   backgroundMusic?.pause();
   backgroundMusic = null;
+  history.splice(0);
   await story.reload(s);
   preloading.value = false;
   nextLine();
@@ -169,9 +182,14 @@ onUnmounted(() => {
     @click="nextLine"
     @choose="(v) => nextLine(v)"
     :loading="loading || preloading"
+    :history="showingHistory"
+    :text-height="showingHistory ? 'calc(100vh - 6em - 24px)' : undefined"
   >
     <button v-if="menuButton" @click="emit('menu')">
       <menu-filled></menu-filled><span>菜单</span>
+    </button>
+    <button @click="showHistory">
+      <history-filled></history-filled><span>回放</span>
     </button>
   </story-scene>
 </template>

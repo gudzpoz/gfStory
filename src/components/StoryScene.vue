@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { SelectLine } from '@brocatel/mdc';
-import { ref, onMounted } from 'vue';
+import {
+  nextTick, onMounted, ref, watch,
+} from 'vue';
 
 import SpriteImageView from './media/SpriteImage.vue';
 import type { SpriteImage } from '../story/interpreter';
@@ -30,7 +32,10 @@ const props = defineProps<{
   textHeight?: string,
 
   loading?: boolean,
+
+  history?: [string, string][];
 }>();
+const textBox = ref<HTMLDivElement>();
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
@@ -74,11 +79,20 @@ onMounted(() => {
     }
   });
 });
+watch(() => props.history, (history) => {
+  if (history) {
+    nextTick(() => {
+      if (textBox.value) {
+        textBox.value.scrollTop = textBox.value.scrollHeight;
+      }
+    });
+  }
+});
 </script>
 
 <template>
   <div class="story-background" :class="classes">
-    <div class="button-slot">
+    <div class="button-slot" v-show="!history">
       <slot></slot>
     </div>
     <div class="background-image">
@@ -105,7 +119,7 @@ onMounted(() => {
         >
         </sprite-image-view>
       </transition-group>
-      <div class="options" v-show="options.length > 0">
+      <div class="options" v-show="options.length > 0 && !history">
         <button v-html="option.option" v-for="option in options" :key="option.option.text"
           @click="emit('choose', option.key)"
         >
@@ -113,10 +127,20 @@ onMounted(() => {
       </div>
       <div class="dialog">
         <div class="narrator-box">
-          <div class="narrator" v-html="narratorHtml"></div>
+          <div class="narrator" v-html="history ? '' : narratorHtml"></div>
           <div class="narrator-corner"></div>
         </div>
-        <div class="text" :style="{ height: textHeight ?? '5em' }" v-html="textHtml"></div>
+        <div ref="textBox" class="text" :style="{ height: textHeight }">
+          <div v-if="!history" v-html="textHtml"></div>
+          <div v-else>
+            <table class="history-lines">
+              <tr v-for="line, i in history!" :key="i">
+                <td v-html="line[0]"></td>
+                <td v-html="line[1]"></td>
+              </tr>
+            </table>
+          </div>
+        </div>
         <div class="corner">
           <span class="loaded-circle" v-html="circleSvg" />
           <span v-html="gfSystemSvg" />
@@ -270,9 +294,15 @@ onMounted(() => {
   margin: 0.5em 1.2em 1.2em 1.2em;
   word-wrap: break-word;
   overflow-y: auto;
+  height: 5em;
+  transition: height 0.2s;
 }
 .dialog .text p {
   margin: 0;
+}
+.dialog .text table.history-lines > tr > td:first-child {
+  padding-right: 1em;
+  vertical-align: top;
 }
 
 .loaded-circle svg {
