@@ -68,16 +68,16 @@ class Prefabs:
                         assert data.m_GameObject.file_id == 0
                         objects[obj.path_id] = data
                 except AssertionError as e:
-                    _warning('something goes wrong (%s): %s: %s', prefab.path, obj.path_id, e)
+                    _warning('something went wrong (%s): %s: %s', prefab.path, obj.path_id, e)
                 except AttributeError:
                     pass
         return objects
-    
+
     @classmethod
     def _match_container_path(cls, path: str) -> str | None:
         match = _path_regex.match(path)
         return None if match is None else match.group(1)
-    
+
     def _collect_game_objects(self, prefabs: list[Environment]):
         objects: dict[int, GameObject] = {}
         for prefab in prefabs:
@@ -87,7 +87,7 @@ class Prefabs:
                     if data.name is not None and data.name != '':
                         objects[data.path_id] = data
         return objects
-    
+
     @classmethod
     def _collect_pic_details(cls, name: str, pic: MonoBehaviour):
         pics: list[GameObject | None] | None = pic.get('pic')
