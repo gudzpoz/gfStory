@@ -31,6 +31,7 @@ const props = defineProps<{
   remote: Set<string>,
   textHtml: string,
   textHeight?: string,
+  popCharAnimationInterval?: number,
 
   loading?: boolean,
 
@@ -43,7 +44,13 @@ const textAnimating = ref(false);
 const emit = defineEmits<{
   (event: 'click'): void,
   (event: 'choose', option: number): void,
+  (event: 'animation-finished'): void,
 }>();
+watch(() => textAnimating.value, (animating) => {
+  if (!animating) {
+    emit('animation-finished');
+  }
+});
 let clickX = 0;
 let clickY = 0;
 function setDownPosition(event: MouseEvent) {
@@ -140,7 +147,8 @@ watch(() => props.history, (history) => {
           <div class="narrator-corner"></div>
         </div>
         <div ref="textBox" class="text" :style="{ height: textHeight }">
-          <animated-text v-show="!history" :html="textHtml" v-model:animating="textAnimating">
+          <animated-text v-show="!history" :html="textHtml" :duration-ms="popCharAnimationInterval"
+            v-model:animating="textAnimating">
           </animated-text>
           <div v-if="history">
             <table class="history-lines">
@@ -182,6 +190,11 @@ watch(() => props.history, (history) => {
   height: 45px;
   position: relative;
   filter: drop-shadow(1px 1px 1px #fff8);
+}
+.story-background .button-slot button.toggled {
+  color: orange;
+  border: 1px solid orange;
+  box-shadow: 0 0 5px orange;
 }
 .story-background .button-slot button:not(:first-child) {
   margin-left: 1em;
