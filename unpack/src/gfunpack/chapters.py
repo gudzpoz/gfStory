@@ -27,6 +27,7 @@ _chapter_file_name_regex = re.compile('^(-?\\d+)-')
 
 T = typing.TypeVar('T')
 
+
 @dataclasses.dataclass
 class ChapterInfo:
     id: int = 0
@@ -34,6 +35,8 @@ class ChapterInfo:
     type: int = 0
     story_campaign_id: str = '0'
     chapter: str = '0'
+    tag: str = ''
+    order: int = 1000000
 
 
 @dataclasses.dataclass
@@ -134,7 +137,7 @@ class Chapters:
             data = hjson.loads(f.read())
             assert isinstance(data, list)
             return [item_type(**item) for item in data]
-    
+
     def _fetch_and_index(self, file: str):
         items = self._fetch(file, dict)
         index = dict((int(i['id']), i) for i in items)
@@ -161,7 +164,7 @@ class Chapters:
             _warning('potential duplicate story entries: %s (%s)', story.title, filtered)
         mapped_files.update(all_files)
         return filtered
-    
+
     @classmethod
     def _unknown_chapter(cls, campaign: int, title: str):
         auto_id = 10000
@@ -239,13 +242,13 @@ class Chapters:
             if chapter.id in chapters:
                 continue
             chapters[chapter.id] = Chapter(
-                name=chapter.name,
+                name=('' if chapter.tag == '' else f'{chapter.tag} {chapter.chapter} ') + chapter.name,
                 description=chapter.chapter,
                 stories=[],
             )
             for campaign_id in chapter.story_campaign_id.split(','):
                 id_mapping[campaign_id] = chapter.id
-        
+
         add_extra_chapter_mappings(id_mapping)
 
         # 已经进入剧情回放的剧情录入对应章节
@@ -253,7 +256,7 @@ class Chapters:
             files = self._parse_event_stories(story, mapped_files)
             if len(files) == 0:
                 continue
-            if story.campaign == -43: # 暗金潮命名有问题
+            if story.campaign == -43:  # 暗金潮命名有问题
                 story.title, story.description = story.description, story.title
             campaign = str(story.campaign)
             # 没有的自动套一个名字

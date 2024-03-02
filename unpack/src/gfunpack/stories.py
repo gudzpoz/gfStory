@@ -34,7 +34,8 @@ _line_replace_templates = [
 ]
 
 _va11_drinks = {
-    # grep 'Id = ' gf-data-ch/asset/luapatch/collaboration/va11/openva11.lua | sed -e 's#^.*Id = #    #' -e 's# ,Name.*Code =#:#'
+    # grep 'Id = ' gf-data-ch/asset/luapatch/collaboration/va11/openva11.lua | \
+    # sed -e 's#^.*Id = #    #' -e 's# ,Name.*Code =#:#' \
     # -e 's#VA11_##' -e 's#\([A-Z]\)# \1#g' -e 's#" #"#' -e 's#"#'\''#g'
     1: 'Bad Touch',
     2: 'Beer',
@@ -152,7 +153,7 @@ class StoryTranspiler:
                 attrs = self._parse_effects(narrator)
                 sprites.append((sprite.group(1), int(sprite.group(2)), attrs))
         return sprites, ' & '.join(speakers)
-    
+
     def _parse_effects(self, effects: str):
         tags = re.findall(_effect_tag_regex, effects)
         parsed: dict[str, str] = dict((tag, '') for tag in tags)
@@ -168,7 +169,7 @@ class StoryTranspiler:
         result = dict((k.lower(), v) for k, v in parsed.items())
         self.effect_tags.update(result.keys())
         return result
-    
+
     def _get_sprite_info(self, character: str, sprite: int):
         c = self.external.characters.get(character)
         if c is not None:
@@ -186,7 +187,7 @@ class StoryTranspiler:
             'scale': -1,
             'center': (-1, -1),
         }
-    
+
     def _inject_lua_scripts(self):
         character_list = []
         for name, sprites in self._sprites.items():
@@ -204,7 +205,7 @@ class StoryTranspiler:
 extern.defineCharacters({serialized})
 extern.preloadResources({resource_urls})
 ```\n\n''';
-    
+
     def _generate_bg_line(self, bg: str, effects: dict[str, str]):
         if bg == '':
             _warning('invalid bg in %s', self.filename)
@@ -232,7 +233,7 @@ extern.preloadResources({resource_urls})
             return None
         narrator_string, effect_string = metadata.split('||', 1)
         return narrator_string, effect_string, content
-    
+
     def _process_effects(self, effect_string: str):
         # 在角色信息和演出信息里都会有类似 <BIN> 这种信息来记录对应的程序效果
         effects = self._parse_effects(effect_string)
@@ -432,4 +433,3 @@ class Stories:
                 dict((k, str(p.relative_to(self.destination))) for k, p in self.extracted.items()),
                 ensure_ascii=False,
             ))
-            

@@ -23,7 +23,8 @@ _character_fairy_regex = re.compile('^assets/resources/dabao/pics/(fairy)/([^/]+
 _variation_name_regex = re.compile('_\\d+$')
 
 
-def _get_pic_of_type(pics: list[Sprite | Texture2D], t: typing.Literal['Sprite'] | typing.Literal['Texture2D']) -> (Sprite | Texture2D):
+def _get_pic_of_type(pics: list[Sprite | Texture2D],
+                     t: typing.Literal['Sprite'] | typing.Literal['Texture2D']) -> (Sprite | Texture2D):
     filtered = [pic for pic in pics if pic.type.name == t]
     assert len(filtered) == 1
     return filtered[0]
@@ -49,6 +50,10 @@ _special_files = [
     'welrod2103',
     'dupijin',
 ]
+
+_special_alpha_mapping = {
+    'nytochild04': 'nyto_child/nytochild01_1.png',
+}
 
 
 class CharacterCollection:
@@ -81,7 +86,7 @@ class CharacterCollection:
     _semaphore: threading.Semaphore
 
     def __init__(self, directory: str, destination: str,
-                 hd: bool = False, pngquant: bool = False, force: bool = False, concurrency = 8) -> None:
+                 hd: bool = False, pngquant: bool = False, force: bool = False, concurrency=8) -> None:
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(destination, create=True)
         self.path_id_index = {}
@@ -164,7 +169,12 @@ class CharacterCollection:
             self.invalid_path_id_index[obj.path_id] = (obj.container, reason)
 
     def _extract_pics(self, bundle: UnityPy.Environment, group: str):
+        """
+        Extracts all the sprites and textures from the given bundle,
+        grouping similar Sprite and Texture2D assets together.
+        """
         character: str | None = None
+        # pics: dict[character_name, [sprite, texture2d]]
         pics: dict[str, list[Sprite | Texture2D]] = {}
         for obj in bundle.objects:
             if obj.type.name != 'Sprite' and obj.type.name != 'Texture2D':
@@ -179,6 +189,7 @@ class CharacterCollection:
             if match is None:
                 self._add_invalid(obj, 'container fails regex match')
                 continue
+            # matched = character_name (probably)
             matched = match.group(1)
 
             if character is None:
@@ -190,6 +201,7 @@ class CharacterCollection:
                     or character == f'{matched}_he'
                 )
 
+            # image variation name
             name = match.group(2).lower()
             if not self.hd and (name.endswith('_hd') or name.endswith('_hd_alpha')):
                 self._add_invalid(obj, 'hd')
@@ -215,45 +227,69 @@ class CharacterCollection:
     def _process(self, bundle: UnityPy.Environment, group: str):
         character, pics = self._extract_pics(bundle, group)
 
+        files: set[str] = set()
+
         for name, pic in pics.items():
             assert len(pic) == 2 or (len(pic) == 1 and pic[0].type.name == 'Texture2D'), f'{name} {pic} {pics}'
+            # names ending with alpha does not imply an alpha file, since there may be dolls named alpha...
             alpha_pic = self._try_alpha_names(name, pics)
             if alpha_pic is None:
                 if name.endswith('_alpha'):
                     continue
-                _warning('alpha resource for %s not found', name)
                 if len(pic) == 1:
+                    # Texture2D usually does not contain a in-file alpha channel.
+                    # While Sprite files usually comes with a Texture2D file.
+                    _warning('alpha resource for %s not found', name)
                     continue
                 alpha_pic = []
+            file = f'{character}/{name}'
+            if file in files:
+                _warning('ignoring dup resource for %s', name)
+                continue
+            files.add(file)
             self._semaphore.acquire()
             threading.Thread(target=self._merge_image, args=(character, name, pic, alpha_pic)).start()
 
-    def _merge_image(self, character: str, name: str, pic: list[Sprite | Texture2D], alpha_pic: list[Sprite | Texture2D]):
-        if character is None or character == '':
-            character = 'default'
-        directory = self.destination.joinpath(character)
-        os.makedirs(directory, exist_ok=True)
-        if len(alpha_pic) == 0:
-            file = self._save_sprite(directory, name, pic)
-            self.alpha_not_found.append(file.resolve())
-        else:
-            file = self._merge_alpha_channel(
-                directory,
-                name,
-                _get_texture(pic),
-                _get_texture(alpha_pic),
-            )
+    def _has_alpha_channel(cls, pic: pathlib.Path):
+        output = subprocess.check_output(['magick', 'identify', '-format', '%[opaque]', pic.resolve()], text=True)
+        return output.strip().lower() == 'false'
 
-        if len(pic) == 2:
-            path_id = _get_sprite_path_id(pic)
-            assert path_id not in self.path_id_index
-            self.path_id_index[path_id] = file
-        else:
-            _warning('sprite with path_id not found for %s (%s)', character, name)
-        if character not in self.character_index:
-            self.character_index[character] = []
-        self.character_index[character].append(file)
-        self._semaphore.release()
+    def _get_image_destination(self, character: str, name: str | None = None):
+        directory = self.destination.joinpath(character)
+        if name is None:
+            return directory.resolve()
+        return directory.joinpath(name).resolve()
+
+    def _merge_image(self, character: str, name: str, pic: list[Sprite | Texture2D],
+                     alpha_pic: list[Sprite | Texture2D]):
+        try:
+            if character is None or character == '':
+                character = 'default'
+            directory = self._get_image_destination(character)
+            os.makedirs(directory, exist_ok=True)
+            if len(alpha_pic) == 0:
+                file = self._save_sprite(directory, name, pic)
+                if not self._has_alpha_channel(file):
+                    self.alpha_not_found.append(file.resolve())
+            else:
+                file = self._merge_alpha_channel(
+                    directory,
+                    name,
+                    _get_texture(pic),
+                    _get_texture(alpha_pic),
+                )
+
+            if len(pic) == 2:
+                path_id = _get_sprite_path_id(pic)
+                assert path_id not in self.path_id_index
+                self.path_id_index[path_id] = file
+            else:
+                _warning('sprite with path_id not found for %s (%s)', character, name)
+            if character not in self.character_index:
+                self.character_index[character] = []
+            self.character_index[character].append(file)
+        finally:
+            self._semaphore.release()
 
     def _save_sprite(self, directory: pathlib.Path, name: str, pic: list[Sprite | Texture2D]):
         image_path = directory.joinpath(f'{name}.png').resolve()
@@ -265,7 +301,8 @@ class CharacterCollection:
         utils.pngquant(image_path, use_pngquant=self.pngquant)
         return image_path
 
-    def _merge_alpha_channel(self, directory: pathlib.Path, name: str, sprite: Texture2D, alpha_sprite: Texture2D) -> pathlib.Path:
+    def _merge_alpha_channel(self, directory: pathlib.Path, name: str,
+                             sprite: Texture2D, alpha_sprite: Texture2D) -> pathlib.Path:
         image_path = directory.joinpath(f'{name}.png').resolve()
         if not self.force and image_path.exists():
             return image_path
@@ -310,9 +347,43 @@ class CharacterCollection:
             image_path,
         ]).check_returncode()
 
+    def _try_finding_alpha(self, file: pathlib.Path, stem: str):
+        damaged = stem.endswith('_d')
+
+        def glob(directory: pathlib.Path, pattern: str):
+            nonlocal damaged
+            return sorted(f for f in directory.glob(pattern)
+                          if f.stem.endswith('_d') == damaged and self._has_alpha_channel(f))
+
+        if stem in _special_alpha_mapping:
+            return [self.destination.joinpath(_special_alpha_mapping[stem])]
+        candidates = []
+        if len(candidates) == 0:
+            candidates = glob(self.destination, f'*/{stem}.png')
+        if len(candidates) == 0:
+            candidates = glob(self.destination, f'*/pic_{stem}.png')
+        if len(candidates) == 0:
+            candidates = glob(self.destination, f'*/pic_{stem}_*.png')
+        if len(candidates) == 0:
+            if stem[-1].isdigit():
+                digitless = re.match('^(.*[^\\d])\\d+$', stem)
+                if digitless is not None:
+                    candidates = glob(file.parent, f'{digitless.group(1)}*.png')
+        if len(candidates) == 0:
+            digitless = re.match('^(.*[^_])_+m_*$', stem)
+            if digitless is not None:
+                candidates = glob(file.parent, f'{digitless.group(1)}*.png')
+        if len(candidates) == 0:
+            if stem.endswith('_he'):
+                return self._try_finding_alpha(file, stem[:-2])
+            if '_he_' in stem:
+                return self._try_finding_alpha(file, stem.replace('_he_', '_'))
+        return candidates
+
     def _try_merging_alpha(self):
         not_found = set(self.alpha_not_found)
         found: list[pathlib.Path] = []
+        file: pathlib.Path
         for file in self.alpha_not_found:
             stem = file.stem
             i = stem.rfind('(')
@@ -321,11 +392,7 @@ class CharacterCollection:
             if i == -1:
                 i = len(stem)
             stem = stem[:i]
-            candidates = sorted(self.destination.glob(f'*/{stem}.png'))
-            if len(candidates) == 0:
-                candidates = sorted(self.destination.glob(f'*/pic_{stem}.png'))
-            if len(candidates) == 0:
-                candidates = sorted(self.destination.glob(f'*/pic_{stem}_*.png'))
+            candidates = self._try_finding_alpha(file, stem)
             for candidate in candidates:
                 if candidate not in not_found:
                     _warning('attempt to use %s as alpha for %s', candidate, file)
@@ -335,8 +402,9 @@ class CharacterCollection:
                     dims_path.unlink()
                     image_path.replace(file)
                     found.append(file)
+                    break
         _warning('no alpha files found for \n%s', '\n'.join(sorted(map(str, not_found - set(found)))))
-            
+
     def load_files(self):
         for path in (bar := tqdm.tqdm(self.resource_files)):
             file = str(path)
@@ -345,6 +413,7 @@ class CharacterCollection:
             if file.endswith('resourcefairy.ab'):
                 group = 'fairy'
             else:
+                # Group images by character names
                 match = _character_file_regex.match(file)
                 assert match, file
                 group = match.group(1)

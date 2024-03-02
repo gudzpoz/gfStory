@@ -47,7 +47,7 @@ def _test_ffmpeg():
         ], stdout=subprocess.DEVNULL).check_returncode()
     except FileNotFoundError:
         raise FileNotFoundError('ffmpeg is required to transcode audio files')
-    
+
 
 def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int, clean: bool,
                      bar: tqdm.tqdm | None = None):
@@ -136,8 +136,8 @@ class BGM:
         self.force = force
         self.concurrency = concurrency
         self.clean = clean
-        self.resource_files = list(f for f in self.directory.glob('*acb3030.dat') if 'AVGacb3030' not in f.stem)
-        self.se_resource_file = list(self.directory.glob('*AVGacb3030.dat'))[0]
+        self.resource_files = list(f for f in self.directory.glob('*acb30?0.dat') if 'AVGacb30?0' not in f.stem)
+        self.se_resource_file = list(self.directory.glob('*AVGacb30?0.dat'))[0]
         _test_ffmpeg()
         self.extracted = self.extract_and_convert()
 
@@ -188,7 +188,7 @@ class BGM:
         bar = tqdm.tqdm(total=len(self.resource_files))
         batch_count = min(self.concurrency * 8, 32) if self.clean else len(self.resource_files)
         for i in range(0, len(self.resource_files), batch_count):
-            batch = self.resource_files[i : i + batch_count]
+            batch = self.resource_files[i: i + batch_count]
             files.update(_transcode_files(
                 self.extract_all(batch),
                 self.force,
