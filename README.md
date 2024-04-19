@@ -18,7 +18,9 @@
 - 用 `pdm` 和 `pip` 把脚本和 `gf-resource-downloader` 的 Python 依赖弄好，
   另外把 `ffmpeg`（用于音频编码）, `pngquant`（压缩图像）, `vgmstream-cli`（解包音频）这几个程序安装好。
 
-- 运行 `gf-resource-downloader` 下载资源。
+- 运行 `gf-resource-downloader` 下载资源（大更新的话说不定要把 `output` 给先清空一下）。
+
+- 更新 `gf-data-ch` 目录，到目录里去 `git pull` 一下，因为剧情资源的索引是直接从这边读取的。
 
 - 运行 `gfunpack` 解包资源并生成对应的索引 JSON 文件（详见 [`build.yml`](./.github/workflows/build.yml)）。
 
