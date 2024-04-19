@@ -316,6 +316,7 @@ extern.preloadResources({resource_urls})
             # 目前出现了 4 种选项：
             # cg: 点击屏幕 CG 的对应地方进行选择，我们直接不处理了，依次显示所有选项
             # c: 最简单的单次选项
+            # r: 重复选项，似乎最后一个选项不重复……暂时也不处理
             # t: 重复选项，走完一个分支会返回来继续选……暂时也不处理
             # va11: 特殊，瓦尔哈拉联动
             option_type = ''
@@ -327,6 +328,10 @@ extern.preloadResources({resource_urls})
                 options = content.split('<c>')
                 content, options = options[0], options[1:]
                 option_type = 'c'
+            elif '<r>' in content:
+                options = content.split('<r>')
+                content, options = options[0], options[1:]
+                option_type = 'r'
             elif '<t>' in content:
                 options = content.split('<t>')
                 content, options = options[0], options[1:]
