@@ -1,6 +1,7 @@
 import json
 import logging
 import pathlib
+import shutil
 import subprocess
 import threading
 import zipfile
@@ -199,6 +200,15 @@ class BGM:
         bar.close()
         files.update((existing.stem, existing) for existing in self.destination.glob('*.m4a'))
         files.update((existing.stem, existing) for existing in self.se_destination.glob('*.m4a'))
+
+        for audio_name, file in [item for item in files.items() if ';' in item[0]]:
+            audio_names = [name.strip() for name in audio_name.split(';')]
+            for name in audio_names:
+                f = file.with_stem(name + '.m4a')
+                shutil.copyfile(file, f)
+                files[name] = f
+            files.pop(audio_name)
+            file.unlink()
 
         name_mapping = self._get_audio_template()
         mapping: dict[str, pathlib.Path] = {}
