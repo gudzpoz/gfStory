@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {
-  NEllipsis, NMenu, NTreeSelect,
+  NEllipsis, NIcon, NInput, NMenu,
   type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
-import { h } from 'vue';
+import { SearchFilled } from '@vicons/material';
+import { computed, h, ref } from 'vue';
 
 import {
   type ChapterType, type GfChaptersInfo,
@@ -19,6 +20,8 @@ defineProps<{
 const emit = defineEmits<{
   'update:value': [value: string],
 }>();
+
+const filter = ref('');
 
 function generateLeafOption(key: string, pair: string[] | string, i: number, name?: string)
   : MenuOption & TreeSelectOption {
@@ -58,7 +61,7 @@ function generateChapterOption(label: ChapterType, name: string): MenuOption & T
   };
 }
 
-const data: (MenuOption & TreeSelectOption)[] = [
+const rawData: (MenuOption & TreeSelectOption)[] = [
   generateChapterOption('main', '主线剧情'),
   generateChapterOption('event', '小型活动'),
   generateChapterOption('colab', '联动'),
@@ -70,6 +73,46 @@ const data: (MenuOption & TreeSelectOption)[] = [
   generateChapterOption('anniversary4', '四周年周年庆'),
   generateChapterOption('skin', '皮肤故事'),
 ];
+function filterOptions(
+  options: (MenuOption & TreeSelectOption)[],
+): (MenuOption & TreeSelectOption)[] {
+  return options.map((option) => {
+    if (option.label?.includes(filter.value)) {
+      return option;
+    }
+    if (option.children) {
+      const filtered = filterOptions(option.children);
+      if (filtered.length > 0) {
+        return { ...option, children: filtered };
+      }
+    }
+    return null;
+  }).filter((x): x is (MenuOption & TreeSelectOption) => x !== null);
+}
+const data = computed(() => {
+  if (filter.value === '') {
+    return rawData;
+  }
+  return filterOptions(rawData);
+});
+function getKeys(options: (MenuOption & TreeSelectOption)[]): string[] {
+  return options.flatMap((option) => {
+    if (option.children) {
+      return [option.key as string, ...getKeys(option.children)];
+    }
+    return [option.key as string];
+  });
+}
+const expandedKeys = computed(() => {
+  if (filter.value === '') {
+    return undefined;
+  }
+  const keys = getKeys(data.value);
+  if (keys.length > 16) {
+    return undefined;
+  }
+  return keys;
+});
 
 function renderLabel(option: MenuOption & TreeSelectOption) {
   const label = h('span', { className: 'story-heading' }, { default: () => option.label });
@@ -83,15 +126,21 @@ function renderLabel(option: MenuOption & TreeSelectOption) {
 </script>
 
 <template>
-  <n-tree-select :options="data"
-    :value="value" @update-value="(v) => emit('update:value', v)"
-    placeholder="搜索" filterable show-path :render-label="(v) => renderLabel(v.option)"
-  >
-  </n-tree-select>
-  <n-menu ref="menu" :options="data"
-    :value="value" @update-value="(v) => emit('update:value', v)"
-    :root-indent="24" :indent="12"
-    accordion :render-label="(v) => renderLabel(v as MenuOption & TreeSelectOption)"
+  <n-input v-model:value="filter" placeholder="搜索" clearable>
+    <template #prefix>
+      <n-icon :component="SearchFilled" />
+    </template>
+  </n-input>
+  <n-menu
+    ref="menu"
+    :options="data"
+    :value="value"
+    @update-value="(v) => emit('update:value', v)"
+    :accordion="filter === '' || expandedKeys === undefined"
+    :expanded-keys="expandedKeys"
+    :root-indent="24"
+    :indent="12"
+    :render-label="(v) => renderLabel(v as MenuOption & TreeSelectOption)"
   >
   </n-menu>
 </template>
