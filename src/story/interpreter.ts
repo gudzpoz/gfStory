@@ -57,7 +57,7 @@ export class StoryInterpreter {
     this.story = new StoryRunner();
   }
 
-  async reload(chunk: string) {
+  async reload(chunk: string, preload: boolean = true) {
     await this.story.loadStory(chunk, undefined, {
       defineCharacters: (characters: string) => {
         this.characters = JSON.parse(characters);
@@ -74,7 +74,9 @@ export class StoryInterpreter {
         this.resources = JSON.parse(resources);
       },
     });
-    await this.preloadResources();
+    if (preload) {
+      await this.preloadResources();
+    }
   }
 
   getImage(s: string): SpriteImage {

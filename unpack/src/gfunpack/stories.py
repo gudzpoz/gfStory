@@ -20,6 +20,10 @@ _sprite_regex = re.compile('^([^()<>]*)\\((\\d*)\\)')
 _effect_tag_regex = re.compile('</?([^<>]+)>')
 _line_replace_templates = [
     (
+        re.compile('[\x00-\x1f\x7f-\x9f]'),
+        ' ',
+    ),
+    (
         re.compile('<color=(#\\w+)>', re.IGNORECASE),
         lambda match: f'<span style="color: {match.group(1)}">',
     ),
