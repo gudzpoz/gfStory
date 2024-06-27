@@ -1,0 +1,34 @@
+diff --git a/downloader.py b/downloader.py
+index f81ca28..e5b6536 100644
+--- a/downloader.py
++++ b/downloader.py
+@@ -139,6 +139,20 @@ if __name__ == "__main__":
+             res_path = os.path.join(
+                 out_dir, abname if config["use_abname"] else resname
+             )
++            if (
++                abname == "asset_particlesother.ab"
++                or abname == "asset_fonts.ab"
++                or abname.startswith("asset_guide")
++                or abname.startswith("asset_map")
++                or abname.startswith("atlasclips_")
++                or abname.startswith("resource_icon_")
++                or abname.startswith("resource_card")
++                or abname.startswith("sprites_")
++                or abname.startswith("live2d")
++                or abname.endswith("_spine.ab")
++                or abname.endswith("_furniture.ab")
++            ):
++                continue
+             if os.path.exists(res_path):
+                 if os.path.getsize(res_path) == size:
+                     logger.info(f"File {resname} already exists, thus will be skipped")
+@@ -155,6 +169,8 @@ if __name__ == "__main__":
+             res_path = os.path.join(
+                 out_dir, abname if config["use_abname"] else resname
+             )
++            if abname.endswith(".usm.dat"):
++                continue
+             if os.path.exists(res_path):
+                 if os.path.getsize(res_path) == size:
+                     logger.info(f"File {resname} already exists, thus will be skipped")

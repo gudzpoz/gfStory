@@ -52,8 +52,10 @@ jobs:
         run: |
           cd unpack
           source .venv/bin/activate
+          mkdir -p downloader/resdata
           cp gf-data-ch/resdata_no_hash.json downloader/resdata/ch_resdata.json
           cd downloader
+          git apply ../downloader.patch
           zip -j resdata.zip resdata/ch_resdata.json
           python downloader.py --downloadres 0 --abname
       - name: Cache Downloaded Resources
@@ -62,13 +64,6 @@ jobs:
           path: |
             unpack/downloader/output
           key: ${{ steps.restore-gf-downloader-resources.outputs.cache-primary-key }}
-      - name: Restore Cached Resources (audio)
-        id: restore-audio-resources
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            unpack/audio
-          key: gf-audio-resources
       - name: Restore Cached Resources (images)
         id: restore-image-resources
         uses: actions/cache/restore@v3
@@ -76,6 +71,36 @@ jobs:
           path: |
             unpack/images
           key: gf-image-resources
+      - name: Unpack images
+        run: |
+          cd unpack
+          source .venv/bin/activate
+          python tests/test_backgrounds.py
+          python tests/test_characters.py
+      - name: Cache Resources (images)
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            unpack/images
+          key: ${{ steps.restore-image-resources.outputs.cache-primary-key }}
+      - name: Restore Cached Resources (audio)
+        id: restore-audio-resources
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            unpack/audio
+          key: gf-audio-resources
+      - name: Unpack audio
+        run: |
+          cd unpack
+          source .venv/bin/activate
+          python tests/test_audio.py
+      - name: Cache Resources (audio)
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            unpack/audio
+          key: ${{ steps.restore-audio-resources.outputs.cache-primary-key }}
       - name: Unpack resources
         run: |
           cd unpack
@@ -83,18 +108,6 @@ jobs:
           python -m gfunpack downloader/output -o .
       - name: Log Disk Space
         run: df -h
-      - name: Cache Resources (audio)
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            unpack/audio
-          key: ${{ steps.restore-audio-resources.outputs.cache-primary-key }}
-      - name: Cache Resources (images)
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            unpack/images
-          key: ${{ steps.restore-image-resources.outputs.cache-primary-key }}
       - name: Move Resources
         run: |
           cd unpack

@@ -49,7 +49,7 @@ export type ChapterType = (
 export type Story = {
   name: string;
   description: string;
-  files: string[] | string[][];
+  files: (string | string[])[];
 };
 export type Chapter = {
   name: string;

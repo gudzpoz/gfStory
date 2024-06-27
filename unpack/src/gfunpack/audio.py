@@ -165,7 +165,7 @@ class BGM:
         return list(self.destination.glob('*.wav'))
 
     def _get_audio_template(self):
-        content = utils.read_text_asset(list(self.directory.glob('*assettextes.ab'))[0], 'assets/resources/textdata/audiotemplate.txt')
+        content = utils.read_text_asset(self.directory.joinpath('asset_textes.ab'), 'assets/resources/textdata/audiotemplate.txt')
         mapping: dict[str, str] = {}
         for line in (l.strip() for l in content.split('\n')):
             if '//' in line:
