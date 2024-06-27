@@ -52,8 +52,10 @@ jobs:
         run: |
           cd unpack
           source .venv/bin/activate
+          cp gf-data-ch/resdata_no_hash.json downloader/resdata/ch_resdata.json
           cd downloader
-          python downloader.py
+          zip -j resdata.zip resdata/ch_resdata.json
+          python downloader.py --downloadres 0 --abname
       - name: Cache Downloaded Resources
         uses: actions/cache/save@v3
         with:

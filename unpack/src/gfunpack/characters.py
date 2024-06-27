@@ -16,7 +16,7 @@ _logger = logging.getLogger('gfunpack.character')
 _info = _logger.info
 _warning = _logger.warning
 
-_character_file_regex = re.compile('^.+character(.*)\\.ab$')
+_character_file_regex = re.compile('^character_(.*)\\.ab$')
 
 
 _alpha_postfixes = {
@@ -276,7 +276,7 @@ class CharacterCollection:
             else:
                 # Group images by character names
                 match = _character_file_regex.match(file)
-                group = bundle_name[36:] if match is None else match.group(1)
+                group = bundle_name if match is None else match.group(1)
             bar.set_description(group)
             bundle = UnityPy.load(file)
             extracted = self._extract_pics(bundle)

@@ -165,6 +165,7 @@ cython_debug/
 output/
 bin/
 stories/
+images
 images/
 audio/
 gf-resource-downloader/

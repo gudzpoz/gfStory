@@ -43,8 +43,8 @@ class BackgroundCollection:
         self.force = force
         self.concurrency = concurrency
         self._semaphore = threading.Semaphore(concurrency)
-        self.profile_asset = list(self.directory.glob('*assettextavg.ab'))[0]
-        self.resource_files = list(self.directory.glob('*resourceavgtexture*.ab'))
+        self.profile_asset = self.directory.joinpath('asset_textavg.ab')
+        self.resource_files = list(self.directory.glob('resource_avgtexture*.ab'))
         self.extracted = self.extract()
 
     def _extract_bg_profiles(self) -> list[str]:
@@ -58,7 +58,7 @@ class BackgroundCollection:
             utils.pngquant(image_path, use_pngquant=self.pngquant)
         extracted[name] = image_path
         self._semaphore.release()
-    
+
     def _extract_files(self, resources: dict[str, Sprite | Texture2D]):
         extracted: dict[str, pathlib.Path] = {}
         for name, image in resources.items():
@@ -69,7 +69,7 @@ class BackgroundCollection:
         for _ in range(self.concurrency):
             self._semaphore.release()
         return extracted
-    
+
     def _extract_bg_pics(self):
         extracted: dict[str, pathlib.Path] = {}
         for file in tqdm.tqdm(self.resource_files):

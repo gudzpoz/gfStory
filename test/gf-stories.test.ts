@@ -21,8 +21,9 @@ const stories = await readAllDir('public/stories');
 const excluded = [
   'public/stories/avgplaybackprofiles.txt',
   'public/stories/profiles.txt',
+  'public/stories/chapters.json',
   'public/stories/stories.json',
-]
+];
 stories.forEach((story) => {
   if (excluded.includes(story)) {
     return;
@@ -30,7 +31,6 @@ stories.forEach((story) => {
   test(`running ${story}`, async () => {
     const markdown = await fs.readFile(story, 'utf-8');
     const lua = await compileMarkdown(markdown);
-    console.log(lua);
     const interpreter = new StoryInterpreter();
     await interpreter.reload(lua, false);
     const line = interpreter.next();

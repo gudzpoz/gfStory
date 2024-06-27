@@ -4,6 +4,7 @@ import pathlib
 import shutil
 import subprocess
 import threading
+import zipfile
 
 import tqdm
 
@@ -22,6 +23,22 @@ def _test_vgmstream():
         ], stdout=subprocess.DEVNULL)
     except FileNotFoundError:
         raise FileNotFoundError('vgmstream-cli is required to unpack sound files')
+
+
+def _extract_zip(path: pathlib.Path, directory: pathlib.Path, force: bool = False):
+    with zipfile.ZipFile(path) as z:
+        extracted: list[pathlib.Path] = []
+        for file in z.filelist:
+            output = directory.joinpath(file.filename)
+            if force or not (
+                    output.is_file() # *.acb.bytes
+                    or output.with_suffix('').is_file() # *.acb
+                    or output.with_suffix('').with_suffix('.wav').is_file() # *.wav
+                    or output.with_suffix('').with_suffix('.m4a').is_file() # *.m4a
+            ):
+                z.extract(file, directory)
+                extracted.append(output)
+        return extracted
 
 
 def _test_ffmpeg():
@@ -73,12 +90,17 @@ def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int, c
     return converted
 
 
-def _extract_acb_to_wav(acb: pathlib.Path, destination: pathlib.Path,
-                        semaphore: threading.Semaphore | None = None):
+def _extract_acb_to_wav(dat: pathlib.Path, destination: pathlib.Path,
+                        semaphore: threading.Semaphore | None = None,
+                        force: bool = False,
+                        clean: bool = True):
     try:
-        assert acb.suffix == '.bytes'
-        acb = acb.rename(acb.with_suffix(''))
-        try:
+        acb_audios = _extract_zip(dat, destination, force=force)
+        assert len(acb_audios) <= 1
+        if len(acb_audios) == 1:
+            acb = acb_audios[0]
+            assert acb.suffix == '.bytes'
+            acb = acb.rename(acb.with_suffix(''))
             subprocess.run([
                 'vgmstream-cli',
                 acb,
@@ -87,8 +109,11 @@ def _extract_acb_to_wav(acb: pathlib.Path, destination: pathlib.Path,
                 '-S',
                 '0',
             ], stdout=subprocess.DEVNULL).check_returncode()
-        finally:
-            acb.rename(acb.with_suffix('.acb.bytes'))
+            if clean:
+                acb.unlink()
+        else:
+            acb = None
+        return acb
     finally:
         if semaphore is not None:
             semaphore.release()
@@ -100,8 +125,6 @@ class BGM:
     destination: pathlib.Path
 
     se_destination: pathlib.Path
-
-    bak_destination: pathlib.Path
 
     resource_files: list[pathlib.Path]
 
@@ -120,12 +143,11 @@ class BGM:
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(pathlib.Path(destination).joinpath('bgm'), create=True)
         self.se_destination = utils.check_directory(pathlib.Path(destination).joinpath('se'), create=True)
-        self.bak_destination = utils.check_directory(pathlib.Path(destination).joinpath('bak'), create=True)
         self.force = force
         self.concurrency = concurrency
         self.clean = clean
-        self.resource_files = list(f for f in self.directory.glob('*.acb.bytes') if not f.stem.startswith('AVG'))
-        self.se_resource_file = list(self.directory.glob('AVG.acb.bytes'))[0]
+        self.resource_files = list(f for f in self.directory.glob('*.acb.dat') if f.name != 'AVG.acb.dat')
+        self.se_resource_file = self.directory.joinpath('AVG.acb.dat')
         _test_ffmpeg()
         self.extracted = self.extract_and_convert()
 
@@ -136,7 +158,7 @@ class BGM:
             semaphore.acquire()
             threading.Thread(
                 target=_extract_acb_to_wav,
-                args=(file, self.destination, semaphore),
+                args=(file, self.destination, semaphore, self.force, self.clean),
             ).start()
         for _ in range(self.concurrency):
             semaphore.acquire()
@@ -167,7 +189,7 @@ class BGM:
 
     def extract_and_convert(self):
         _info('extracting se audio')
-        _extract_acb_to_wav(self.se_resource_file, self.se_destination, None)
+        _extract_acb_to_wav(self.se_resource_file, self.se_destination, None, self.force, self.clean)
         files = _transcode_files(
             list(self.se_destination.glob('*.wav')),
             self.force,
@@ -208,13 +230,7 @@ class BGM:
             elif name in files:
                 mapping[name] = files[name].relative_to(self.destination.parent)
             else:
-                matched = list(self.destination.parent.joinpath('audio-bak').glob(f'*/{audio_name}.m4a'))
-                if len(matched) > 0:
-                    file = self.bak_destination.joinpath(matched[0].name)
-                    shutil.copyfile(matched[0], file)
-                    mapping[name] = file.relative_to(self.destination.parent)
-                else:
-                    _warning('audio identifier %s not found', name)
+                _warning('audio identifier %s not found', name)
         mapped_files = set(mapping.values())
         for audio_name, file in files.items():
             path = file.relative_to(self.destination.parent)

@@ -410,7 +410,7 @@ class Stories:
     def __init__(self, directory: str, destination: str, *, gf_data_directory: str | None = None, root_destination: str | None = None):
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(destination, create=True)
-        self.resource_file = list(self.directory.glob('*assettextavg.ab'))[0]
+        self.resource_file = self.directory.joinpath('asset_textavg.ab')
         root = self.destination.parent if root_destination is None else pathlib.Path(root_destination)
         self.resources = StoryResources(
             root.joinpath('audio', 'audio.json'),
