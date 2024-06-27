@@ -68,6 +68,12 @@ _va11_drinks = {
     25: 'Flaming Moai',
 }
 
+_wrong_sprites = {
+    "G36C": {
+        7: ("G36CMod", 0),
+    },
+}
+
 
 class StoryResources:
     audio: dict[str, str]
@@ -80,7 +86,15 @@ class StoryResources:
         self.characters = json.load(character_json.open())
         for character in self.characters.values():
             for k, sprite in character.items():
-                character[k] = mapper.SpriteDetails(**sprite)
+                character[k] = mapper.SpriteDetails(**typing.cast(dict[str, typing.Any], sprite))
+        characters: dict[str, dict[str, mapper.SpriteDetails]] = {}
+        for k, v in self.characters.items():
+            if k.lower() in characters:
+                _warning('duplicate character: %s', k)
+                characters[k.lower()].update(v)
+            else:
+                characters[k.lower()] = v
+        self.characters = characters
 
 
 class StoryTranspiler:
@@ -90,6 +104,8 @@ class StoryTranspiler:
 
     effect_tags: set[str]
     content_tags: set[str]
+
+    missing_audio: dict[str, set[str]]
 
     _markdown: list[str]
     _remote_narrators: set[str]
@@ -105,6 +121,8 @@ class StoryTranspiler:
 
         self.effect_tags = set()
         self.content_tags = set()
+
+        self.missing_audio = {}
 
         self._markdown = []
         self._remote_narrators = set()
@@ -175,7 +193,10 @@ class StoryTranspiler:
         return result
 
     def _get_sprite_info(self, character: str, sprite: int):
-        c = self.external.characters.get(character)
+        if character in _wrong_sprites:
+            if sprite in _wrong_sprites[character]:
+                character, sprite = _wrong_sprites[character][sprite]
+        c = self.external.characters.get(character.lower())
         if c is not None:
             s = c.get(str(sprite))
             if s is not None:
@@ -185,6 +206,8 @@ class StoryTranspiler:
                     'scale': -1,
                     'center': (-1, -1),
                 }
+        if character != '':
+            _warning('sprite %s not found in %s', sprite, character)
         return {
             'name': sprite,
             'url': '',
@@ -238,6 +261,9 @@ extern.preloadResources({resource_urls})
         narrator_string, effect_string = metadata.split('||', 1)
         return narrator_string, effect_string, content
 
+    def record_missing_audio(self, type: str, name: str):
+        self.missing_audio.setdefault(type, set()).add(name)
+
     def _process_effects(self, effect_string: str):
         # 在角色信息和演出信息里都会有类似 <BIN> 这种信息来记录对应的程序效果
         effects = self._parse_effects(effect_string)
@@ -245,11 +271,15 @@ extern.preloadResources({resource_urls})
             self._update_class('blank', False)
             self._markdown.append(self._generate_bg_line(effects['bin'], effects))
         if 'bgm' in effects:
+            if effects['bgm'] not in self.external.audio:
+                self.record_missing_audio('bgm', effects['bgm'])
             bgm = self.external.audio.get(effects['bgm'], f'bgm/{effects["bgm"]}.m4a')
             self._resources.add(f'/audio/{bgm}')
             self._markdown.append(f':audio[] /audio/{bgm}')
         if 'se' in effects or 'se1' in effects or 'se2' in effects or 'se3' in effects:
             se =  effects.get('se') or effects.get('se1') or effects.get('se2') or effects.get('se3') or ''
+            if se not in self.external.audio:
+                self.record_missing_audio('se', se)
             se = self.external.audio.get(se, f'se/{se}.m4a')
             self._resources.add(f'/audio/{se}')
             self._markdown.append(f':se[] /audio/{se}')
@@ -375,7 +405,9 @@ class Stories:
 
     effect_tags: set[str]
 
-    def __init__(self, directory: str, destination: str, *, gf_data_directory: str | None = None, root_destination: str | None = None) -> None:
+    missing_audio: dict[str, set[str]]
+
+    def __init__(self, directory: str, destination: str, *, gf_data_directory: str | None = None, root_destination: str | None = None):
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(destination, create=True)
         self.resource_file = list(self.directory.glob('*assettextavg.ab'))[0]
@@ -388,14 +420,19 @@ class Stories:
         self.gf_data_directory = root.joinpath('gf-data-ch') if gf_data_directory is None else pathlib.Path(gf_data_directory)
         self.content_tags = set()
         self.effect_tags = set()
+        self.missing_audio = { 'bgm': set(), 'se': set() }
         self.extracted = self.extract_all()
         self.copy_missing_pieces()
+        _warning('missing audio: %s', self.missing_audio)
 
     def _decode(self, content: str, filename: str):
         transpiler = StoryTranspiler(self.resources, script=content, filename=filename)
         chunk = transpiler.decode()
         self.content_tags.update(transpiler.content_tags)
         self.effect_tags.update(transpiler.effect_tags)
+        for k, v in transpiler.missing_audio.items():
+            if k in self.missing_audio:
+                self.missing_audio[k].update(v)
         return chunk
 
     def extract_all(self):

@@ -6,7 +6,7 @@ import typing
 
 import UnityPy
 from UnityPy import Environment
-from UnityPy.classes import GameObject, MonoBehaviour, MonoScript, Sprite
+from UnityPy.classes import GameObject, MonoBehaviour, MonoScript
 
 from gfunpack import utils
 
@@ -18,6 +18,7 @@ _warning = _logger.warning
 class DialoguePicDetails:
     name: str
     path_id: int
+    alpha_path_id: int
     pic_name: str = ''
     scale: float = -1.0
     offset: tuple[float, float] = (0.0, 0.0)
@@ -29,22 +30,13 @@ _path_regex = re.compile('^assets/resources/dabao/avgpicprefabs/([^/]+)\\.prefab
 class Prefabs:
     directory: pathlib.Path
 
-    destination: pathlib.Path
-
     resource_files: list[pathlib.Path]
 
     details: dict[str, list[DialoguePicDetails]]
 
-    all_path_id_index: dict[int, pathlib.Path]
-
-    def __init__(self, directory: str, destination: str) -> None:
+    def __init__(self, directory: str) -> None:
         self.directory = utils.check_directory(directory)
-        self.destination = utils.check_directory(
-            str(pathlib.Path(destination).joinpath('prefabs')),
-            create=True,
-        )
         self.resource_files = list(self.directory.glob('*prefab*.ab'))
-        self.all_path_id_index = {}
         prefabs = [UnityPy.load(str(path)) for path in self.resource_files]
         self.details = self.load_prefabs(prefabs)
 
@@ -52,12 +44,6 @@ class Prefabs:
         objects: dict[int, MonoBehaviour] = {}
         for prefab in prefabs:
             for obj in prefab.objects:
-                if obj.type.name == 'Sprite' and obj.path_id != 0:
-                    file = self.destination.joinpath(f'{obj.path_id}.png').absolute()
-                    data = typing.cast(Sprite, obj.read())
-                    data.image.save(file)
-                    self.all_path_id_index[obj.path_id] = file
-                    continue
                 if obj.type.name != 'MonoBehaviour':
                     continue
                 data = typing.cast(MonoBehaviour, obj.read())
@@ -91,7 +77,13 @@ class Prefabs:
     @classmethod
     def _collect_pic_details(cls, name: str, pic: MonoBehaviour):
         pics: list[GameObject | None] | None = pic.get('pic')
+        alphaPics: list[GameObject | None] | None = pic.get('picAlpha')
         assert pics is not None
+        assert alphaPics is not None
+        if name in {'Empty', 'backgroundFrame'}:
+            assert len(alphaPics) == 0
+        else:
+            assert len(pics) == len(alphaPics), f'{name} {len(pics)} {len(alphaPics)}'
         scales = pic.get('orderScale') or []
         if len(pics) >= len(scales):
             scales.extend([None] * (len(pics) - len(scales)))
@@ -101,7 +93,7 @@ class Prefabs:
         assert len(pics) == len(scales), f'{pic.read_typetree()}'
 
         details: list[DialoguePicDetails] = []
-        for i, (p, scale) in enumerate(zip(pics, scales)):
+        for i, (p, alpha, scale) in enumerate(zip(pics, alphaPics, scales)):
             avg_offset = scale.avgOffset if scale else None
             if avg_offset is None:
                 offset = (0.0, 0.0)
@@ -112,6 +104,7 @@ class Prefabs:
             details.append(DialoguePicDetails(
                 name=name,
                 path_id=p.path_id if p is not None else 0,
+                alpha_path_id=alpha.path_id if alpha is not None else 0,
                 pic_name=scale.picname if scale else '',
                 scale=scale.scale if scale else -1.0,
                 offset=offset,

@@ -4,13 +4,13 @@ import pathlib
 import shutil
 import subprocess
 import threading
-import zipfile
 
 import tqdm
 
 from gfunpack import utils
 
 _logger = logging.getLogger('gfunpack.utils')
+_info = _logger.info
 _warning = _logger.warning
 
 
@@ -24,22 +24,6 @@ def _test_vgmstream():
         raise FileNotFoundError('vgmstream-cli is required to unpack sound files')
 
 
-def _extract_zip(path: pathlib.Path, directory: pathlib.Path, force: bool = False):
-    with zipfile.ZipFile(path) as z:
-        extracted: list[pathlib.Path] = []
-        for file in z.filelist:
-            output = directory.joinpath(file.filename)
-            if force or not (
-                    output.is_file() # *.acb.bytes
-                    or output.with_suffix('').is_file() # *.acb
-                    or output.with_suffix('').with_suffix('.wav').is_file() # *.wav
-                    or output.with_suffix('').with_suffix('.m4a').is_file() # *.m4a
-            ):
-                z.extract(file, directory)
-                extracted.append(output)
-        return extracted
-
-
 def _test_ffmpeg():
     try:
         subprocess.run([
@@ -51,7 +35,7 @@ def _test_ffmpeg():
 
 
 def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int, clean: bool,
-                     bar: tqdm.tqdm | None = None):
+                     batch_size: int = -1, bar: tqdm.tqdm | None = None):
     semaphore = threading.Semaphore(concurrency)
     def transcode(file: pathlib.Path, output: pathlib.Path):
         nonlocal clean, force, semaphore
@@ -76,38 +60,38 @@ def _transcode_files(files: list[pathlib.Path], force: bool, concurrency: int, c
         threading.Thread(target=transcode, args=(file, output)).start()
         converted[file.stem] = output
         if bar:
-            bar.update()
+            if batch_size == -1 or batch_size == len(files):
+                bar.update()
+            else:
+                bar.set_description(f'{file.stem}')
+
+    if bar and batch_size != -1 and batch_size != len(files):
+        bar.update(batch_size)
 
     for _ in range(concurrency):
         semaphore.acquire()
     return converted
 
 
-def _extract_acb_to_wav(dat: pathlib.Path, destination: pathlib.Path,
-                        semaphore: threading.Semaphore | None = None,
-                        force: bool = False,
-                        clean: bool = True):
-    acb_audios = _extract_zip(dat, destination, force=force)
-    assert len(acb_audios) <= 1
-    if len(acb_audios) == 1:
-        acb = acb_audios[0]
+def _extract_acb_to_wav(acb: pathlib.Path, destination: pathlib.Path,
+                        semaphore: threading.Semaphore | None = None):
+    try:
         assert acb.suffix == '.bytes'
         acb = acb.rename(acb.with_suffix(''))
-        subprocess.run([
-            'vgmstream-cli',
-            acb,
-            '-o',
-            destination.joinpath('?n.wav'),
-            '-S',
-            '0',
-        ], stdout=subprocess.DEVNULL).check_returncode()
-        if clean:
-            acb.unlink()
-    else:
-        acb = None
-    if semaphore is not None:
-        semaphore.release()
-    return acb
+        try:
+            subprocess.run([
+                'vgmstream-cli',
+                acb,
+                '-o',
+                destination.joinpath('?n.wav'),
+                '-S',
+                '0',
+            ], stdout=subprocess.DEVNULL).check_returncode()
+        finally:
+            acb.rename(acb.with_suffix('.acb.bytes'))
+    finally:
+        if semaphore is not None:
+            semaphore.release()
 
 
 class BGM:
@@ -116,6 +100,8 @@ class BGM:
     destination: pathlib.Path
 
     se_destination: pathlib.Path
+
+    bak_destination: pathlib.Path
 
     resource_files: list[pathlib.Path]
 
@@ -134,11 +120,12 @@ class BGM:
         self.directory = utils.check_directory(directory)
         self.destination = utils.check_directory(pathlib.Path(destination).joinpath('bgm'), create=True)
         self.se_destination = utils.check_directory(pathlib.Path(destination).joinpath('se'), create=True)
+        self.bak_destination = utils.check_directory(pathlib.Path(destination).joinpath('bak'), create=True)
         self.force = force
         self.concurrency = concurrency
         self.clean = clean
-        self.resource_files = list(f for f in self.directory.glob('*acb30?0.dat') if 'AVGacb30?0' not in f.stem)
-        self.se_resource_file = list(self.directory.glob('*AVGacb30?0.dat'))[0]
+        self.resource_files = list(f for f in self.directory.glob('*.acb.bytes') if not f.stem.startswith('AVG'))
+        self.se_resource_file = list(self.directory.glob('AVG.acb.bytes'))[0]
         _test_ffmpeg()
         self.extracted = self.extract_and_convert()
 
@@ -149,7 +136,7 @@ class BGM:
             semaphore.acquire()
             threading.Thread(
                 target=_extract_acb_to_wav,
-                args=(file, self.destination, semaphore, self.force, self.clean),
+                args=(file, self.destination, semaphore),
             ).start()
         for _ in range(self.concurrency):
             semaphore.acquire()
@@ -179,13 +166,15 @@ class BGM:
         return mapping
 
     def extract_and_convert(self):
-        _extract_acb_to_wav(self.se_resource_file, self.se_destination, None, self.force, self.clean)
+        _info('extracting se audio')
+        _extract_acb_to_wav(self.se_resource_file, self.se_destination, None)
         files = _transcode_files(
             list(self.se_destination.glob('*.wav')),
             self.force,
             self.concurrency,
             self.clean,
         )
+        _info('extracting bgm audio')
         bar = tqdm.tqdm(total=len(self.resource_files))
         batch_count = min(self.concurrency * 8, 32) if self.clean else len(self.resource_files)
         for i in range(0, len(self.resource_files), batch_count):
@@ -195,6 +184,7 @@ class BGM:
                 self.force,
                 self.concurrency,
                 self.clean,
+                len(batch),
                 bar,
             ))
         bar.close()
@@ -218,7 +208,13 @@ class BGM:
             elif name in files:
                 mapping[name] = files[name].relative_to(self.destination.parent)
             else:
-                _warning('audio identifier %s not found', name)
+                matched = list(self.destination.parent.joinpath('audio-bak').glob(f'*/{audio_name}.m4a'))
+                if len(matched) > 0:
+                    file = self.bak_destination.joinpath(matched[0].name)
+                    shutil.copyfile(matched[0], file)
+                    mapping[name] = file.relative_to(self.destination.parent)
+                else:
+                    _warning('audio identifier %s not found', name)
         mapped_files = set(mapping.values())
         for audio_name, file in files.items():
             path = file.relative_to(self.destination.parent)

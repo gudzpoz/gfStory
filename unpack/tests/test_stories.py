@@ -1,5 +1,4 @@
-from gfunpack import chapters
-from gfunpack import stories
+from gfunpack import chapters, characters, mapper, prefabs, stories
 
 
 def test_stories():

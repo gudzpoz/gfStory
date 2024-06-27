@@ -1,8 +1,12 @@
-from gfunpack import characters
+from gfunpack import characters, prefabs
 
 
 def test_characters():
-    characters.CharacterCollection('downloader/output', 'images', pngquant=True)
+    sprite_indices = prefabs.Prefabs('downloader/output')
+    characters.CharacterCollection(
+        'downloader/output', 'images',
+        sprite_indices, pngquant=True,
+    ).extract()
 
 
 if __name__ == '__main__':

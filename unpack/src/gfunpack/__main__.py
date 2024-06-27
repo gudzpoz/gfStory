@@ -20,10 +20,11 @@ images = destination.joinpath('images')
 bg = backgrounds.BackgroundCollection(downloaded, str(images), pngquant=True, concurrency=cpus)
 bg.save()
 
-character_mapper = mapper.Mapper(
-  prefabs.Prefabs(downloaded, str(images)),
-  characters.CharacterCollection(downloaded, str(images), pngquant=True, concurrency=cpus),
-)
+sprite_indices = prefabs.Prefabs(downloaded)
+chars = characters.CharacterCollection(downloaded, str(images), sprite_indices, pngquant=True, concurrency=cpus)
+chars.extract()
+
+character_mapper = mapper.Mapper(sprite_indices, chars)
 character_mapper.write_indices()
 
 bgm = audio.BGM(downloaded, str(destination.joinpath('audio')), concurrency=cpus, clean=not args.no_clean)
