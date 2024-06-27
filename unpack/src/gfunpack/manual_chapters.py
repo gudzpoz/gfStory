@@ -2,6 +2,7 @@ import dataclasses
 import pathlib
 import shutil
 import subprocess
+import typing
 
 
 @dataclasses.dataclass
@@ -195,23 +196,27 @@ def get_recorded_chapters():
                                   for f in story.files)
     return chapters, id_mapping, recorded_files
 
-
-_attached_stories = [
+_attached_stories_motor_race = [
+    '-31-3c3-1.txt',
+    'battleavg/-31-specialbattletips-1.txt',
+    'battleavg/-31-specialbattletips-3.txt',
+    'battleavg/-31-specialbattletips-4.txt',
+    'battleavg/-31-specialbattletips-5.txt',
+    'battleavg/-31-specialbattletips-6.txt',
+    'battleavg/-31-specialbattletips-fly.txt',
+    'battleavg/-31-specialbattletips-spdup.txt',
+    'battleavg/-31-specialbattletips-lose.txt',
+    'battleavg/-31-specialbattletips-victory.txt',
+]
+_attached_stories: list[tuple[str, str, str]] = [
     ('0-2-1.txt', '0-2-3round2.txt'),
     ('-2-1-1.txt', '-2-1-4-point2207.txt'),
 
-    # 盲拆法则
-    ('-7-1-3round1.txt', '-7-1-3round2.txt'),
-    ('-7-1-3round2.txt', '-7-1-4-point3498.txt'),
-
-    ('-7-2-3round1.txt', '-7-2-3round2.txt'),
-    ('-7-2-3round2.txt', '-7-2-4-point3342.txt'),
-
-    ('-7-3-3round1.txt', '-7-3-3round2.txt'),
-    ('-7-3-3round2.txt', '-7-3-4-point3533.txt'),
-
-    ('-7-4-3round1.txt', '-7-4-3round2.txt'),
-    ('-7-4-3round2.txt', '-7-4-4-point3612.txt'),
+    # 盲拆法则：感觉应该是第二周目的变化？
+    ('-7-1-3round1.txt', '-7-1-3round2.txt', '阶段2.5'),
+    ('-7-2-3round1.txt', '-7-2-3round2.txt', '阶段2.5'),
+    ('-7-3-3round1.txt', '-7-3-3round2.txt', '阶段2.5'),
+    ('-7-4-3round1.txt', '-7-4-3round2.txt', '阶段2.5'),
 
     # 有序紊流
     ('-24-2-1.txt', '-24-2-2.txt'),
@@ -228,6 +233,33 @@ _attached_stories = [
     ('-24-14-2first.txt', '-24-14-2.txt'),
     ('-24-15-1.txt', '-24-15-2first.txt'),
     ('-24-15-2first.txt', '-24-15-2.txt'),
+
+    # 裂变链接
+    # ('-33-59-4-point13290.txt', '-33-59-4-point80174.txt'), # 两个点位事件一样
+    ('-33-59-4-point13290.txt', 'battleavg/-33-24-1first.txt'),
+
+    # 偏振光
+    ('-36-5-ex.txt', 'battleavg/-36-specialbattletips.txt'),
+] + [ # 异构体飙车小游戏局内剧情
+    (prev, after)
+    for prev, after in zip(
+        _attached_stories_motor_race[:-1],
+        _attached_stories_motor_race[1:],
+    )
+]
+_attached_events = [
+    # 裂变链接：吞噬一切的花海-战斗
+    ('-33-42-1first.txt', Story(
+        name="吞噬一切的花海-战斗",
+        description="小游戏说明",
+        files=['battleavg/-33-44-1first.txt'],
+    )),
+    # 愚人节
+    ('1-1-1.txt', Story(
+        name="演习训练-愚人节版",
+        description="欢迎回来，父亲大人。",
+        files=['always-404-1-1-1.txt', 'always-404-1-1-3.txt'],
+    ))
 ]
 
 
@@ -242,20 +274,39 @@ def add_extra_chapter_mappings(id_mapping: dict[str, int]):
     for extra, mapping in _extra_chapter_mapping.items():
         id_mapping[extra] = id_mapping[mapping]
 
+_manual_processed = set().union(
+)
+def is_manual_processed(file: str):
+    return file in _manual_processed
+def manually_process(chapters: dict[int, Chapter], id_mapping: dict[str, int], mapped_files: set[str]):
+    pass
+
 
 def post_insert(chapters: dict[int, Chapter], mapped_files: set[str]):
-    stories: dict[str, Story] = {}
+    stories: dict[str, tuple[Chapter, Story]] = {}
     for chapter in chapters.values():
         for story in chapter.stories:
             for file in story.files:
-                stories[file if isinstance(file, str) else file[0]] = story
-    for file, attached in _attached_stories:
+                stories[file if isinstance(file, str) else file[0]] = (chapter, story)
+    for attachment in _attached_stories:
+        file, attached = attachment[0:2]
         assert attached not in mapped_files, attached
-        story = stories[file]
+        c, story = stories[file]
         assert isinstance(story.files[0], str)
-        stories[attached] = story
-        story.files.append(attached)
+        stories[attached] = (c, story)
+        story.files.insert(
+            story.files.index(file) + 1,
+            attached if len(attachment) == 2 else (attached, attachment[2]),
+        )
         mapped_files.add(attached)
+    for file, attached in _attached_events:
+        assert all(f not in mapped_files for f in attached.files)
+        c, story = stories[file]
+        c.stories.insert(c.stories.index(story) + 1, attached)
+        for f in attached.files:
+            file = typing.cast(str, f)
+            stories[file] = (c, attached)
+            mapped_files.add(file)
 
 
 def get_block_list():
@@ -278,6 +329,29 @@ def get_block_list():
             '-6-4-1.txt',
             '-6-4-2end.txt',
             '-6-4-2first.txt',
+
+            # 裂变链接，两个点位事件内容是一样的
+            '-33-59-4-point80174.txt',
+
+            # 各种秃洞复刻提示
+            '-39-ex1-4-point91502.txt',
+            '-55-ext.txt',
+            '-60-tips.txt',
+            '-63-tips.txt',
+            '-65-tips.txt',
+            '-65-tips2.txt',
+            '-404-ext-1-1.txt',
+            # 飓风营救复刻 (-45 -> -24)
+            "-45-ext-04.txt",
+            "-45-ext-01.txt",
+            "-45-ext-02.txt",
+            "-45-ext-03.txt",
+
+            # 盲拆法则：这些是英文版
+            '-7-1-4-point3498.txt',
+            '-7-2-4-point3342.txt',
+            '-7-3-4-point3533.txt',
+            '-7-4-4-point3612.txt',
         ]
     )
 

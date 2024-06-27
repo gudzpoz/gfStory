@@ -174,7 +174,7 @@ class StoryTranspiler:
             else:
                 attrs = self._parse_effects(narrator)
                 sprites.append((sprite.group(1), int(sprite.group(2)), attrs))
-        return sprites, ' & '.join(speakers)
+        return sprites, speakers[-1] if len(speakers) > 0 else ''
 
     def _parse_effects(self, effects: str):
         tags = re.findall(_effect_tag_regex, effects)

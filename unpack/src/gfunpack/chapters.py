@@ -7,7 +7,11 @@ import typing
 import hjson
 
 from gfunpack.stories import Stories
-from gfunpack.manual_chapters import Chapter, Story, add_extra_chapter_mappings, get_block_list, get_recorded_chapters, post_insert
+from gfunpack.manual_chapters import (
+    Chapter, Story, add_extra_chapter_mappings,
+    get_block_list, get_recorded_chapters, post_insert,
+    is_manual_processed, manually_process,
+)
 
 _logger = logging.getLogger('gfunpack.prefabs')
 _warning = _logger.warning
@@ -252,8 +256,10 @@ class Chapters:
         add_extra_chapter_mappings(id_mapping)
 
         # 已经进入剧情回放的剧情录入对应章节
+        blocked = get_block_list()
         for story in sorted(self.main_events, key=lambda e: (abs(e.campaign), e.id)):
-            files = self._parse_event_stories(story, mapped_files)
+            files = [f for f in self._parse_event_stories(story, mapped_files)
+                     if not is_manual_processed(f) and f not in blocked]
             if len(files) == 0:
                 continue
             if story.campaign == -43:  # 暗金潮命名有问题
@@ -270,11 +276,11 @@ class Chapters:
             ))
 
         post_insert(chapters, mapped_files)
+        manually_process(chapters, id_mapping, mapped_files)
 
         others = set(self.stories.extracted.keys()) - mapped_files
 
         # 其它的看起来命名比较规律的东西
-        blocked = get_block_list()
         for file in sorted(others):
             if file in blocked:
                 continue
