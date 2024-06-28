@@ -718,6 +718,9 @@ def get_block_list():
             '-64-ext-1.txt',
             '-64-ext-2.txt',
             '-64-ext-3.txt',
+
+            # 22重困境
+            '-69-ext-1.txt',
         ]
     )
 
@@ -765,3 +768,47 @@ def get_extra_anniversary_stories(destination: pathlib.Path):
         dup = destination.joinpath('anniversary6/55-102686.txt')
         if dup.is_file():
             dup.unlink()
+
+
+def fill_in_chapter_info(main: list[Chapter], events: list[Chapter]):
+    for c in events:
+        if '沙罗蚀相' in c.name:
+            break
+    else:
+        raise ValueError('Could not find chapter 沙罗蚀相')
+    events.remove(c)
+    for j, d in enumerate(main):
+        if '纵向应变' in d.name:
+            break
+    else:
+        raise ValueError('Could not find chapter 纵向应变')
+    main.insert(j + 1, c)
+
+    assert main[1].description == '0'
+    chpt_zero = main[1]
+    main.remove(chpt_zero)
+    assert main[4].description == '4'
+    main.insert(5, chpt_zero)
+    mapping = {
+        0: '种子',
+        1: '苏醒',
+        2: '回声',
+        3: '沉默',
+        4: '风声',
+        5: '火种',
+        6: '彗星',
+        7: '同伴',
+        8: '火花',
+        9: '迷失',
+        10: '炼狱',
+        11: '狩猎',
+        12: '喘息',
+        13: '归墟',
+    }
+    for c in main:
+        if c.description.isdigit():
+            i = int(c.description)
+            if i in mapping:
+                c.description = mapping[i]
+                continue
+        c.description = ''

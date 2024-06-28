@@ -11,6 +11,7 @@ from gfunpack.manual_chapters import (
     Chapter, Story, add_extra_chapter_mappings,
     get_block_list, get_recorded_chapters, post_insert,
     is_manual_processed, manually_process, manual_naming,
+    fill_in_chapter_info,
 )
 
 _logger = logging.getLogger('gfunpack.prefabs')
@@ -344,7 +345,9 @@ class Chapters:
     def categorize_stories(self):
         all_chapters: dict[str, list[Chapter]] = {}
         stories = self._categorize_main_stories()
-        main, events, colab = [], [], []
+        main: list[Chapter] = []
+        events: list[Chapter] = []
+        colab: list[Chapter] = []
         for s in stories:
             if s.description.isdigit() and 2000 < int(s.description) < 2100:
                 events.append(s)
@@ -355,6 +358,7 @@ class Chapters:
         events.sort(key=lambda e: int(e.description))
         events.extend(filter(lambda e: e.name.startswith('未知: '), main))
         main = list(filter(lambda e: not e.name.startswith('未知: '), main))
+        fill_in_chapter_info(main, events)
         all_chapters['main'] = main
         all_chapters['event'] = events
         all_chapters['colab'] = colab
