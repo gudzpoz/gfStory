@@ -10,7 +10,7 @@ from gfunpack.stories import Stories
 from gfunpack.manual_chapters import (
     Chapter, Story, add_extra_chapter_mappings,
     get_block_list, get_recorded_chapters, post_insert,
-    is_manual_processed, manually_process,
+    is_manual_processed, manually_process, manual_naming,
 )
 
 _logger = logging.getLogger('gfunpack.prefabs')
@@ -262,18 +262,18 @@ class Chapters:
                      if not is_manual_processed(f) and f not in blocked]
             if len(files) == 0:
                 continue
-            if story.campaign == -43:  # 暗金潮命名有问题
-                story.title, story.description = story.description, story.title
-            campaign = str(story.campaign)
-            # 没有的自动套一个名字
-            if campaign not in id_mapping:
-                chapter_id, chapter = self._unknown_chapter(story.campaign, story.title)
-                chapters[chapter_id], id_mapping[campaign] = chapter, chapter_id
-            chapters[id_mapping[campaign]].stories.append(Story(
+            info = Story(
                 name=files[0] if story.title == '' else story.title,
                 description=story.description,
                 files=typing.cast(list[str | tuple[str, str]], files),
-            ))
+            )
+            manual_naming(info, story.campaign)
+            campaign = str(story.campaign)
+            # 没有的自动套一个名字
+            if campaign not in id_mapping:
+                chapter_id, chapter = self._unknown_chapter(story.campaign, info.name)
+                chapters[chapter_id], id_mapping[campaign] = chapter, chapter_id
+            chapters[id_mapping[campaign]].stories.append(info)
 
         post_insert(chapters, mapped_files)
         manually_process(chapters, id_mapping, mapped_files)
@@ -296,6 +296,8 @@ class Chapters:
             if campaign not in id_mapping:
                 chapter_id, chapter = self._unknown_chapter(int(campaign), campaign)
                 chapters[chapter_id], id_mapping[campaign] = chapter, chapter_id
+            else:
+                _warning('unknown story: %s', file)
             chapters[id_mapping[campaign]].stories.append(Story(
                 name=file,
                 description='',

@@ -458,6 +458,7 @@ class Stories:
         return extracted
 
     def copy_missing_pieces(self):
+        manual_chapters.get_extra_stories(self.gf_data_directory.joinpath('asset', 'avgtxt'))
         manual_chapters.get_extra_anniversary_stories(self.gf_data_directory.joinpath('asset', 'avgtxt'))
         directory = utils.check_directory(self.gf_data_directory.joinpath('asset', 'avgtxt'))
         for file in directory.glob('**/*.txt'):
