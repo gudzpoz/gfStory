@@ -23,13 +23,19 @@ const emit = defineEmits<{
 
 const filter = ref('');
 
-function generateLeafOption(key: string, pair: string[] | string, i: number, name?: string)
-  : MenuOption & TreeSelectOption {
+function generateLeafOption(
+  key: string,
+  pair: string[] | string,
+  i: number,
+  name?: string,
+  description?: string,
+): MenuOption & TreeSelectOption {
   const file = typeof pair === 'string' ? pair : pair[0];
   const label = name ?? (typeof pair === 'string' ? `阶段 ${i + 1}` : pair[1]);
   return {
     key: `${key}|${file}`,
     label,
+    description,
   };
 }
 
@@ -48,7 +54,7 @@ function generateChapterOption(label: ChapterType, name: string): MenuOption & T
           return { key, label: story.name, disabled: true };
         }
         if (story.files.length === 1) {
-          return generateLeafOption(key, story.files[0], 0, story.name);
+          return generateLeafOption(key, story.files[0], 0, story.name, story.description);
         }
         return {
           key,
