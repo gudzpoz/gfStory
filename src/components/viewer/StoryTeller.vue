@@ -167,7 +167,7 @@ async function updateStory(chunk?: string) {
   await story.reload(s);
   preloading.value = false;
   auto.value = false;
-  autoSpeed.value = 1;
+  // autoSpeed.value = 1; // Do not reset autoSpeed
   nextLine();
 }
 updateStory(props.chunk);

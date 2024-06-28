@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 
 const props = defineProps<{
   html: string,
@@ -63,7 +63,8 @@ function startAnimation() {
     );
   }
   div.style.display = '';
-  popChar(0, 0);
+
+  nextTick(() => requestAnimationFrame(() => popChar(0, 0)));
 }
 startAnimation();
 watch(() => props.html, startAnimation);
