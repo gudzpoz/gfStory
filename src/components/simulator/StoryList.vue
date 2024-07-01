@@ -1,44 +1,72 @@
 <script setup lang="ts">
 import {
-  NEllipsis, NIcon, NInput, NMenu,
+  NEllipsis, NIcon,
+  NInput, NMenu, NModal,
   type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
 import { SearchFilled } from '@vicons/material';
-import { computed, h, ref } from 'vue';
+import {
+  computed, h, ref, onMounted, nextTick, watch,
+} from 'vue';
 
 import {
-  type ChapterType, type GfChaptersInfo,
+  type Chapter, type ChapterType, type GfChaptersInfo,
 } from '../../types/assets';
+import { MAPPED_CHAPTERS } from './edges';
+import StoryChart from './StoryChart.vue';
 
 import jsonChapterPresets from '../../assets/chapters.json';
 
 const chapterPresets: GfChaptersInfo = jsonChapterPresets;
 
-defineProps<{
+const props = defineProps<{
   value: string,
+  setTitleWhenSelected?: boolean,
 }>();
 const emit = defineEmits<{
   'update:value': [value: string],
 }>();
 
 const filter = ref('');
+const preventAutofocus = ref(true);
+onMounted(() => nextTick(() => {
+  preventAutofocus.value = false;
+}));
+const showMap = ref(false);
 
 function generateLeafOption(
-  key: string,
-  pair: string[] | string,
+  pair: string | string[],
   i: number,
-  name?: string,
-  description?: string,
 ): MenuOption & TreeSelectOption {
-  const file = typeof pair === 'string' ? pair : pair[0];
-  const label = name ?? (typeof pair === 'string' ? `阶段 ${i + 1}` : pair[1]);
-  return {
-    key: `${key}|${file}`,
-    label,
-    description,
-  };
+  const description = '';
+  if (typeof pair === 'string') {
+    return { key: pair, label: `阶段 ${i + 1}`, description };
+  }
+  return { key: pair[0], label: pair[1], description };
 }
 
+function generateStoryOptions(chapter: Chapter) {
+  const stories: (MenuOption & TreeSelectOption)[] = chapter.stories.map((story) => {
+    const key = typeof story.files[0] === 'string' ? story.files[0] : story.files[0][0];
+    if (story.files.length === 0) {
+      return { key, label: story.name, disabled: true };
+    }
+    if (story.files.length === 1) {
+      return { key, label: story.name, description: story.description };
+    }
+    return {
+      key: `:${key}`,
+      label: story.name,
+      description: story.description,
+      children: story.files.map((file, k) => generateLeafOption(file, k)),
+    };
+  });
+  const ep = MAPPED_CHAPTERS.find((s) => chapter.name.startsWith(`${s} `));
+  if (ep) {
+    stories.unshift(generateLeafOption([`map|${ep}`, '选关界面'], 0));
+  }
+  return stories;
+}
 function generateChapterOption(label: ChapterType, name: string): MenuOption & TreeSelectOption {
   const chapters = chapterPresets[label];
   return {
@@ -48,21 +76,7 @@ function generateChapterOption(label: ChapterType, name: string): MenuOption & T
       key: `${label}-${i}`,
       label: chapter.name,
       description: chapter.description,
-      children: chapter.stories.map((story, j) => {
-        const key = `${label}-${i}-${j}`;
-        if (story.files.length === 0) {
-          return { key, label: story.name, disabled: true };
-        }
-        if (story.files.length === 1) {
-          return generateLeafOption(key, story.files[0], 0, story.name, story.description);
-        }
-        return {
-          key,
-          label: story.name,
-          description: story.description,
-          children: story.files.map((file, k) => generateLeafOption(key, file, k)),
-        };
-      }),
+      children: generateStoryOptions(chapter),
     })),
   };
 }
@@ -73,7 +87,7 @@ const rawData: (MenuOption & TreeSelectOption)[] = [
   generateChapterOption('colab', '联动'),
   generateChapterOption('upgrading', '心智升级'),
   generateChapterOption('bonding', '格里芬往事'),
-  generateChapterOption('anniversary', '周年庆'),
+  generateChapterOption('anniversary', '七周年周年庆'),
   generateChapterOption('anniversary6', '六周年周年庆'),
   generateChapterOption('anniversary5', '五周年周年庆'),
   generateChapterOption('anniversary4', '四周年周年庆'),
@@ -129,19 +143,71 @@ function renderLabel(option: MenuOption & TreeSelectOption) {
     default: () => [label, option.description as string],
   });
 }
+
+function setTitle(key: string) {
+  if (!props.setTitleWhenSelected) {
+    return;
+  }
+  function find(
+    children: (MenuOption & TreeSelectOption)[],
+  ): (MenuOption & TreeSelectOption)[] | null {
+    return children.map((child) => {
+      if (child.key === key) {
+        return [child];
+      }
+      if (child.children) {
+        const found = find(child.children);
+        if (found) {
+          found.unshift(child);
+          return found;
+        }
+      }
+      return null;
+    }).filter((x): x is (MenuOption & TreeSelectOption)[] => x !== null)[0];
+  }
+  const found = find(data.value);
+  if (found) {
+    const label = found.slice(1).map((x) => x.label).join(' > ');
+    document.title = label;
+  } else {
+    document.title = key;
+  }
+}
+const chapterEp = ref('');
+const chartSelected = ref('');
+function selectItem(v: string) {
+  if (v.startsWith('map|')) {
+    const chapter = v.split('|')[1];
+    showMap.value = true;
+    chapterEp.value = chapter;
+    return;
+  }
+  showMap.value = false;
+  setTitle(v);
+  emit('update:value', v);
+}
+watch(chartSelected, (v) => {
+  selectItem(v);
+});
 </script>
 
 <template>
-  <n-input v-model:value="filter" placeholder="搜索" clearable>
+  <n-input v-model:value="filter" placeholder="搜索" clearable :disabled="preventAutofocus">
     <template #prefix>
       <n-icon :component="SearchFilled" />
     </template>
   </n-input>
+  <n-modal v-model:show="showMap" preset="card" size="huge">
+    <template #header>
+      <span>剧情前后连接</span>
+    </template>
+    <story-chart :ep-name="chapterEp" v-model:value="chartSelected" />
+  </n-modal>
   <n-menu
     ref="menu"
     :options="data"
     :value="value"
-    @update-value="(v) => emit('update:value', v)"
+    @update-value="selectItem"
     :accordion="filter === '' || expandedKeys === undefined"
     :expanded-keys="expandedKeys"
     :root-indent="24"

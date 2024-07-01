@@ -17,7 +17,7 @@ import {
 
 import CharacterList from '../character/CharacterList.vue';
 import StoryLineView from './StoryLineView.vue';
-import StoryList from '../viewer/StoryList.vue';
+import StoryList from '../simulator/StoryList.vue';
 import {
   defaultLine, nextId, type GfStory, type TextLine,
 } from '../../types/lines';
