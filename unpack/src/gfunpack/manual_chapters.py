@@ -167,12 +167,12 @@ def _extra_stories_sac2045():
 
 
 _extra_chapters: list[tuple[str, str, str, list]] = [
-    ('-42', '茧中蝶影', '2020', _extra_stories_cocoon()),
-    ('-50', '焙炒爱意', '2022', []),
-    ('-52', '里坎禁猎区', '2022', []),
-    ('-59', '迷笼猜想', '2023', []),
-    ('-61', '思域迷航', '2023', []),
-    ('-62', '许可！二次加载', '2023', []),
+    ('-42', 'C.E. 2020 茧中蝶影', '2020', _extra_stories_cocoon()),
+    ('-50', 'C.E. 2022 焙炒爱意', '2022', []),
+    ('-52', 'C.E. 2022 里坎禁猎区', '2022', []),
+    ('-59', 'C.E. 2023 迷笼猜想', '2023', []),
+    ('-61', 'C.E. 2023 思域迷航', '2023', []),
+    ('-62', 'C.E. 2023 许可！二次加载', '2023', []),
 
     ('-8', '猎兔行动', '《苍翼默示录》x《罪恶装备》联动内容', []),
     ('-14,-15', '独法师', '《崩坏学园2》联动内容', []),
@@ -317,7 +317,7 @@ _attached_events: list[tuple[str, Story]] = [
     ('1-1-1.txt', Story(
         name="演习训练-愚人节版",
         description="欢迎回来，父亲大人。",
-        files=['always-404-1-1-1.txt', 'always-404-1-1-2.txt', 'always-404-1-1-3.txt'],
+        files=['always-404-1-1-1.txt', 'battleavg/always-404-1-1-2.txt', 'always-404-1-1-3.txt'],
     )),
     # 里坎禁猎区
     ('-52-0-1.txt', Story(
@@ -721,6 +721,24 @@ def get_block_list():
 
             # 22重困境
             '-69-ext-1.txt',
+
+            # 双联乱数
+            '-41-3-4-point71201.txt',
+            '-41-3-4-point71305.txt',
+            '-41-3-4-point72006.txt',
+            '-41-2-4-ex1point91924.txt',
+            '-41-2-4-ex1point91926.txt',
+            '-41-2-4-ex2point92278.txt',
+            '-41-2-4-ex3point92127.txt',
+            '-41-2-4-ex4point92161.txt',
+            '-41-2-4-ex5point92614.txt',
+            '-41-2-4-ex6point92372.txt',
+            '-41-3-4-ex1point91991.txt',
+            '-41-3-4-ex2point91990.txt',
+            '-41-3-4-ex3point92264.txt',
+            '-41-3-4-ex4point92396.txt',
+            '-41-3-4-ex5point92254.txt',
+            '-41-3-4-ex6point92335.txt',
         ]
     )
 
@@ -810,5 +828,5 @@ def fill_in_chapter_info(main: list[Chapter], events: list[Chapter]):
             i = int(c.description)
             if i in mapping:
                 c.description = mapping[i]
-                continue
-        c.description = ''
+            else:
+                c.description = ''
