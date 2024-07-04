@@ -166,6 +166,25 @@ def _extra_stories_sac2045():
     ]
 
 
+def _extra_stories_gunslinger():
+    return [
+        ('第九号', '', ['-38-0-1.txt']),
+        ('万花筒', '1', ['-38-1-1.txt']),
+        ('新叉子', '2/2战斗', ['-38-2-1.txt', '-38-2-2first.txt', '-38-2-2round.txt', '-38-2-2end.txt']),
+        ('薄暮的星星', '2幕间', ['-38-2-3.txt']),
+        ('多幕剧Ⅰ', '3', ['-38-3-1.txt']),
+        ('多幕剧Ⅱ', '3/3战斗', ['-38-3-1first.txt', '-38-3-2round.txt', '-38-3-2end.txt']),
+        ('幸福的魔法', '3幕间', ['-38-3-3.txt']),
+        ('公社射击训练场', '', ['battleavg/-38-specialbattletips.txt']),
+        ('不会说谎的匹诺曹Ⅰ', '4/4战斗', ['-38-4-1first.txt', '-38-4-1round.txt']),
+        ('不会说谎的匹诺曹Ⅱ', '4结算剧情', ['-38-4-1end.txt']),
+        ('曾经的庭院Ⅰ', '5/5战斗', ['-38-5-1first.txt', '-38-5-1round.txt']),
+        ('曾经的庭院Ⅱ', '5结算剧情', ['-38-5-1end.txt']),
+        ('Hai capito', '6战斗', ['-38-6-1first.txt', '-38-6-1round.txt', '-38-6-1end.txt']),
+        ('完美和声', '7结局', ['-38-7-1.txt']),
+    ]
+
+
 _extra_chapters: list[tuple[str, str, str, list]] = [
     ('-42', 'C.E. 2020 茧中蝶影', '2020', _extra_stories_cocoon()),
     ('-50', 'C.E. 2022 焙炒爱意', '2022', []),
@@ -178,7 +197,7 @@ _extra_chapters: list[tuple[str, str, str, list]] = [
     ('-14,-15', '独法师', '《崩坏学园2》联动内容', []),
     ('-19,-20,-22', '荣耀日', '《DJMAX RESPECT》联动内容', []),
     ('-32', '瓦尔哈拉', '《VA-11 HALL-A》联动内容', _extra_stories_va11()),
-    ('-38', '梦间剧', '《神枪少女》联动内容', []),
+    ('-38', '梦间剧', '《神枪少女》联动内容', _extra_stories_gunslinger()),
     ('-43', '暗金潮', '《全境封锁》联动内容', []),
     ('-46', '小邪神前线', '《邪神与厨二病少女》联动内容', []),
     ('-57', '雪浪映花颜', '《佐贺偶像是传奇 卷土重来》联动内容', []),
@@ -309,14 +328,14 @@ _attached_stories: list[tuple[str, str, str]] = [
 _attached_events: list[tuple[str, Story]] = [
     # 裂变链接：吞噬一切的花海-战斗
     ('-33-42-1first.txt', Story(
-        name="吞噬一切的花海-战斗",
-        description="小游戏说明",
+        name='吞噬一切的花海-战斗',
+        description='小游戏说明',
         files=['battleavg/-33-44-1first.txt'],
     )),
     # 愚人节
     ('1-1-1.txt', Story(
-        name="演习训练-愚人节版",
-        description="欢迎回来，父亲大人。",
+        name='演习训练-愚人节版',
+        description='欢迎回来，父亲大人。',
         files=['always-404-1-1-1.txt', 'battleavg/always-404-1-1-2.txt', 'always-404-1-1-3.txt'],
     )),
     # 里坎禁猎区
@@ -615,10 +634,10 @@ def get_block_list():
             '-65-tips2.txt',
             '-404-ext-1-1.txt',
             # 飓风营救复刻 (-45 -> -24)
-            "-45-ext-04.txt",
-            "-45-ext-01.txt",
-            "-45-ext-02.txt",
-            "-45-ext-03.txt",
+            '-45-ext-04.txt',
+            '-45-ext-01.txt',
+            '-45-ext-02.txt',
+            '-45-ext-03.txt',
 
             # 盲拆法则：这些是英文版
             '-7-1-4-point3498.txt',
@@ -626,8 +645,12 @@ def get_block_list():
             '-7-3-4-point3533.txt',
             '-7-4-4-point3612.txt',
 
-            # 神枪少女联动，和 -38-ex-point91829.txt 内容一样
+            # 神枪少女联动，玩法说明而已
             '-38-ex-point91820.txt',
+            '-38-ex-point91829.txt',
+            '-38-ex1-5-point91849.txt',
+            '-38-ex1-2-point91865.txt',
+            '-38-2-4first.txt', # 和 '-38-2-1.txt', '-38-2-2first.txt' 重复，用了修了错别字的版本
 
             # 一币之遥，游戏提示
             '-49-3-1-point94780.txt',

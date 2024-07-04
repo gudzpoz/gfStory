@@ -1,8 +1,8 @@
 diff --git a/downloader.py b/downloader.py
-index f81ca28..e5b6536 100644
+index 663194b..7879b7d 100644
 --- a/downloader.py
 +++ b/downloader.py
-@@ -139,6 +139,20 @@ if __name__ == "__main__":
+@@ -140,6 +140,20 @@ if __name__ == "__main__":
              res_path = os.path.join(
                  out_dir, abname if config["use_abname"] else resname
              )
@@ -23,7 +23,7 @@ index f81ca28..e5b6536 100644
              if os.path.exists(res_path):
                  if os.path.getsize(res_path) == size:
                      logger.info(f"File {resname} already exists, thus will be skipped")
-@@ -155,6 +169,8 @@ if __name__ == "__main__":
+@@ -156,6 +170,8 @@ if __name__ == "__main__":
              res_path = os.path.join(
                  out_dir, abname if config["use_abname"] else resname
              )

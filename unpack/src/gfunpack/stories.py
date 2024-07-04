@@ -240,6 +240,7 @@ extern.preloadResources({resource_urls})
         if bg_path is None or bg_path == '':
             _warning('background not found for `%s` in %s', bg, self.filename)
             bg_path = f'background/{bg}.png'
+        self._update_class('night', 'night' in effects)
         night = 'night' if 'night' in effects else '!night'
         self._resources.add(f'/images/{bg_path}')
         return f':background[] :classes[{night}] /images/{bg_path}'
@@ -290,10 +291,19 @@ extern.preloadResources({resource_urls})
                     continue
                 self._markdown.append(self._generate_bg_line(cg.strip(), effects))
                 self._markdown.append('……' * i)
+
+        # 一众的蒙版效果
+        if '回忆' in effects:
+            self._update_class('memories', True)
+        # 关闭所有蒙版效果
+        if '关闭蒙版' in effects:
+            self._update_class('memories', False)
+            self._update_class('night', False)
+
         # 没猜错的和，这两个都是永久性黑屏，直至新的背景出现
         if '黑屏1' in effects or '黑点1' in effects:
             self._update_class('blank', True)
-        # 没猜错的和，这两个都是暂时性黑屏，一定时间后消失
+        # 没猜错的话，这两个都是暂时性黑屏，一定时间后消失
         # 但的确不知道黑屏会不会挡住角色
         if '黑屏2' in effects or '黑点2' in effects:
             self._update_class('blank', False)
