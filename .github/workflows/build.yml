@@ -11,7 +11,7 @@ jobs:
   documentation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Log Disk Space
@@ -35,13 +35,13 @@ jobs:
           echo "${PWD}/bin" >> $GITHUB_PATH
       - name: Restore Cached Resources
         id: restore-gf-downloader-resources
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             unpack/downloader/output
           key: gf-downloader-resources
       - name: Setup PDM
-        uses: pdm-project/setup-pdm@v3
+        uses: pdm-project/setup-pdm@v4
       - name: Setup Python Environment
         run: |
           cd unpack
@@ -59,14 +59,14 @@ jobs:
           zip -j resdata.zip resdata/ch_resdata.json
           python downloader.py --downloadres 0 --abname
       - name: Cache Downloaded Resources
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             unpack/downloader/output
           key: ${{ steps.restore-gf-downloader-resources.outputs.cache-primary-key }}
       - name: Restore Cached Resources (images)
         id: restore-image-resources
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             unpack/images
@@ -78,14 +78,14 @@ jobs:
           python tests/test_backgrounds.py
           python tests/test_characters.py
       - name: Cache Resources (images)
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             unpack/images
           key: ${{ steps.restore-image-resources.outputs.cache-primary-key }}
       - name: Restore Cached Resources (audio)
         id: restore-audio-resources
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             unpack/audio
@@ -96,7 +96,7 @@ jobs:
           source .venv/bin/activate
           python tests/test_audio.py
       - name: Cache Resources (audio)
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             unpack/audio
@@ -116,9 +116,9 @@ jobs:
           mv images ../public
           mv stories ../public
       - name: Setup PNPM
-        uses: pnpm/action-setup@v2.2.4
+        uses: pnpm/action-setup@v4
         with:
-          version: 8.5.0
+          version: 9.4.0
           run_install: false
       - name: Setup PNPM Workspace
         run: |
