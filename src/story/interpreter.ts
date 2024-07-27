@@ -21,6 +21,7 @@ export type Tags = {
 
 export interface SpriteImage extends CharacterSprite {
   image: HTMLImageElement;
+  effects?: string[];
 }
 
 function fetchSpriteImage(character: string, s: CharacterSprite) {

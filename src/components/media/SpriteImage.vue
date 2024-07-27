@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  onMounted, onUnmounted, ref, watch,
+  computed, onMounted, onUnmounted, ref, watch,
 } from 'vue';
 
 import type { SpriteImage } from '../../story/interpreter';
@@ -11,6 +11,7 @@ const props = defineProps<{
   container: HTMLDivElement,
   framed?: boolean,
 }>();
+const url = computed(() => `url(${props.sprite.image.src})`);
 
 const idealHeightRatio = 1;
 const idealWHRatio = 11 / 16;
@@ -79,7 +80,7 @@ watch(() => props.framed, updateImageProperties);
 </script>
 
 <template>
-  <div class="sprite"
+  <div class="sprite" :class="sprite.effects ?? []"
     :style="{ left: `${center}px` }"
   >
     <div class="sprite-frame"
@@ -155,9 +156,34 @@ watch(() => props.framed, updateImageProperties);
   z-index: 1;
   width: 100%;
   height: 100%;
-  background-image: radial-gradient(#cccc 0, #0ff3 0.6px);
+  background-image: radial-gradient(#ccc7 0, #0ff3 0.6px);
   background-size: 3px 3px;
   overflow: hidden;
+}
+
+.sprite.stealth {
+  opacity: 0.5;
+  filter: drop-shadow(0 0 5px cyan) blur(2px);
+}
+
+@supports (mask-type: luminance) {
+  .sprite.stealth {
+    filter: blur(1px) drop-shadow(0 0 2px cyan);
+    opacity: 0.6;
+  }
+  .sprite.stealth .sprite-frame {
+    mask-image: v-bind(url);
+    mask-size: cover;
+    mask-mode: luminance;
+    background-color: #47f;
+  }
+  .sprite.stealth .sprite-frame img {
+    mix-blend-mode: luminosity;
+    mask-image: v-bind(url);
+    mask-size: cover;
+    mask-mode: luminance;
+    filter: grayscale(1) brightness(0.5) contrast(5);
+  }
 }
 
 .sprite img[src=""] {

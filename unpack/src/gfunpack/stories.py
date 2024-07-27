@@ -74,6 +74,9 @@ _wrong_sprites = {
     },
 }
 
+_sprite_effects = {
+    '隐身': 'stealth',
+}
 
 class StoryResources:
     audio: dict[str, str]
@@ -173,7 +176,12 @@ class StoryTranspiler:
                 sprites.append(('', 0, {}))
             else:
                 attrs = self._parse_effects(narrator)
-                sprites.append((sprite.group(1), int(sprite.group(2)), attrs))
+                name = sprite.group(1)
+                if '#' in name:
+                    name, effect = name.split('#')
+                    assert effect in _sprite_effects, f'unknown sprite effect {effect}'
+                    attrs[_sprite_effects[effect]] = ''
+                sprites.append((name, int(sprite.group(2)), attrs))
         return sprites, speakers[-1] if len(speakers) > 0 else ''
 
     def _parse_effects(self, effects: str):
@@ -318,7 +326,8 @@ extern.preloadResources({resource_urls})
             if character not in self._sprites:
                 self._sprites[character] = {}
             self._sprites[character][sprite] = ''
-        sprite_string = '|'.join(f'{character}/{sprite}' for character, sprite, _ in sprites)
+        sprite_string = '|'.join(f'{character}/{sprite}/{",".join(effects.keys())}'
+                                 for character, sprite, effects in sprites)
         self._remote_narrators = set(
             character for character, _, attrs in sprites
             if '通讯框' in attrs or character in self._remote_narrators

@@ -87,7 +87,17 @@ function updateLine(line: string, tags: Record<string, string>) {
   narratorColor.value = tags.color ?? '';
   if (tags.sprites !== undefined) {
     sprites.value = tags.sprites.split('|').map(toText)
-      .map((s) => (s === '' ? null : story.getImage(s)))
+      .map((s) => {
+        const [name, n, effects] = s.split('/');
+        const image = s === '' ? null : story.getImage(`${name}/${n}`);
+        if (effects === '') {
+          return image;
+        }
+        return {
+          ...image,
+          effects: effects.split(','),
+        };
+      })
       .filter((s) => s) as SpriteImage[];
   }
   if (tags.remote !== undefined) {
