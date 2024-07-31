@@ -3,7 +3,9 @@ import type { SelectLine, TextLine } from '@brocatel/mdc';
 import {
   computed, onUnmounted, ref, watch,
 } from 'vue';
-import { HistoryFilled, MenuFilled, PlayArrowFilled } from '@vicons/material';
+import {
+  HistoryFilled, MenuFilled, PlayArrowFilled, TextSnippetFilled,
+} from '@vicons/material';
 
 import StoryScene from './StoryScene.vue';
 import { StoryInterpreter, type SpriteImage, type Tags } from '../../story/interpreter';
@@ -13,11 +15,13 @@ const props = defineProps<{
 
   loading?: boolean,
   menuButton?: boolean,
+  textButton?: boolean,
 }>();
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
   (event: 'menu'): void,
+  (event: 'text'): void,
 }>();
 
 const story = new StoryInterpreter();
@@ -221,6 +225,9 @@ onUnmounted(() => {
   >
     <button v-if="menuButton" @click="emit('menu')">
       <menu-filled></menu-filled><span>菜单</span>
+    </button>
+    <button v-if="textButton" @click="emit('text')">
+      <text-snippet-filled></text-snippet-filled><span>文本</span>
     </button>
     <button @click="showHistory">
       <history-filled></history-filled><span>回放</span>

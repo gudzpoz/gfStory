@@ -195,12 +195,26 @@ watch(chartSelected, (v) => {
 });
 
 const searcher = ref<MiniSearch>();
-const searchImported = ref(false);
+const searchImported = ref('下载索引文件中……');
 const searchResults = ref<SearchResult[]>([]);
 const reverseTitleIndex = ref<Record<string, string>>({});
 async function search() {
   showSearch.value = true;
-  if (!searchImported.value) {
+  if (searchImported.value !== '') {
+    const keys = (await (await fetch('/search/index.json')).json()) as string[];
+    const text = (await Promise.all(keys.map(async (key) => {
+      const path = `/search/${key}`;
+      const t = (await fetch(path)).text();
+      searchImported.value += '.';
+      return t;
+    }))).join('');
+    searchImported.value = '正在将索引文件加载入内存……（可能需要半分钟）';
+    searcher.value = await MiniSearch.loadJSONAsync(text, {
+      fields: ['text'],
+      storeFields: ['id'],
+      tokenize: bigram,
+    });
+    searchImported.value = '正在关联章节名称……';
     reverseTitleIndex.value = Object.fromEntries(
       Object.values(chapterPresets)
         .flat()
@@ -211,17 +225,7 @@ async function search() {
           return [f[0], `${chapter.name} - ${story.name} - ${f[1]}`];
         }))),
     );
-    const keys = (await (await fetch('/search/index.json')).json()) as string[];
-    const text = (await Promise.all(keys.map(async (key) => {
-      const path = `/search/${key}`;
-      return (await fetch(path)).text();
-    }))).join('');
-    searcher.value = MiniSearch.loadJSON(text, {
-      fields: ['text'],
-      storeFields: ['id'],
-      tokenize: bigram,
-    });
-    searchImported.value = true;
+    searchImported.value = '';
   }
   const results = searcher.value!.search(filter.value);
   searchResults.value = results;
@@ -277,7 +281,8 @@ function joinBigramTerms(terms: string[]): string {
   >
   </n-menu>
   <n-modal v-model:show="showSearch" preset="card" size="huge">
-    <n-spin v-if="!searchImported" />
+    <n-spin v-if="searchImported !== ''" />
+    <span v-if="searchImported !== ''">{{ searchImported }}</span>
     <ul class="search-results">
       <li v-for="result in searchResults" :key="result.id" @click="selectItem(result.id)">
         <span>{{ reverseTitleIndex[result.id] ?? result.id }}</span>

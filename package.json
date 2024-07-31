@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm build-viewer && vite",
-    "build-index": "vite-node test/flex-index.ts public/stories public/search",
+    "build-index": "vite-node test/mini-index.ts public/stories public/search",
     "build-editor": "pnpm build-viewer && run-p type-check \"build-only {@}\" --",
     "build-viewer-only": "env BUILD_TARGET=viewer run-p type-check \"build-only {@}\" --",
     "build-viewer": "pnpm build-viewer-only && cp viewer/viewer.html public && mkdir -p dist && cp viewer/viewer.html dist",
@@ -31,6 +31,8 @@
     "dexie": "^3.2.7",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
+    "micromark": "^4.0.0",
+    "micromark-extension-directive": "^3.0.1",
     "minisearch": "^7.1.0",
     "n-gram": "^2.0.2",
     "naive-ui": "^2.38.2",

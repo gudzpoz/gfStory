@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { micromark } from 'micromark';
+import { directive, directiveHtml } from 'micromark-extension-directive';
 import {
   NConfigProvider,
   NDrawer, NDrawerContent,
-  NModalProvider,
+  NModal, NModalProvider,
   darkTheme, zhCN,
   type MenuInst,
 } from 'naive-ui';
@@ -18,12 +20,28 @@ import {
 } from '../../types/assets';
 
 const chunk = ref('');
+const html = ref('');
 const loading = ref(false);
 async function switchStory(path: string) {
   loading.value = true;
   try {
     const markdown = await fetch(path).then((res) => res.text());
     chunk.value = await compileMarkdown(markdown);
+    html.value = micromark(markdown, {
+      allowDangerousHtml: true,
+      extensions: [directive()],
+      htmlExtensions: [directiveHtml({
+        // eslint-disable-next-line func-names
+        '*': function (d) {
+          this.tag('<span');
+          this.tag(` class="${d.name} directive"`);
+          this.tag('>');
+          this.raw(d.label ?? '');
+          this.tag('</span>');
+          return true;
+        },
+      })],
+    });
     loading.value = false;
   } catch (e) {
     loading.value = false;
@@ -64,13 +82,16 @@ onMounted(() => {
     width.value = window.innerWidth;
   });
 });
+
+const showText = ref(false);
 </script>
 
 <template>
   <n-config-provider :theme="darkTheme" :locale="zhCN">
     <n-modal-provider>
-      <n-drawer v-model:show="showMenu" :width="Math.min(width * 0.8, 400)" placement="left"
-        display-directive="show"
+      <n-drawer
+        v-model:show="showMenu" :width="Math.min(width * 0.8, 400)"
+        placement="left" display-directive="show"
       >
         <n-drawer-content title="剧情选择" :native-scrollbar="false">
           <story-list v-model:value="value" set-title-when-selected />
@@ -98,21 +119,98 @@ onMounted(() => {
           </slot>
         </n-drawer-content>
       </n-drawer>
-      <story-teller menu-button @menu="showMenu = true" :chunk="chunk" :loading="loading">
+      <story-teller
+        menu-button text-button
+        @menu="showMenu = true" @text="showText = true"
+        :chunk="chunk"
+        :loading="loading"
+      >
       </story-teller>
+      <n-modal
+        v-model:show="showText" preset="card" size="huge"
+        style="max-width: 90vw; max-height: 90vh; overflow-y: auto"
+      >
+        <div class="plain-text" v-html="html"></div>
+      </n-modal>
     </n-modal-provider>
   </n-config-provider>
 </template>
 
 <style>
-#app, .story-background {
+#app,
+.story-background {
   height: 100vh;
 }
+
 .story-heading {
   font-weight: bold;
   margin-right: 1em;
 }
+
 .n-drawer a {
   color: #63e2b7;
+}
+
+.plain-text {
+  max-width: 90vw;
+}
+
+.plain-text .directive.audio::before {
+  content: "背景音乐：";
+}
+.plain-text .directive.background::before {
+  content: "背景: ";
+}
+.plain-text .directive.se::before {
+  content: "音效: ";
+}
+.plain-text .directive.audio::before,
+.plain-text .directive.background::before,
+.plain-text .directive.se::before {
+  font-style: italic;
+}
+
+.plain-text .directive.classes,
+.plain-text .directive.color,
+.plain-text .directive.remote,
+.plain-text .directive.sprites,
+.plain-text pre code.language-lua {
+  display: none;
+}
+.plain-text > p {
+  margin-left: 2em;
+}
+.plain-text .directive.narrator:not(:empty) {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-left: -2em;
+  border-left: 2px solid orange;
+  padding-left: 0.5em;
+}
+
+.plain-text > ul::before {
+  content: "选项：";
+  font-weight: bold;
+  font-style: italic;
+  margin-left: -2em;
+}
+
+.plain-text p > code {
+  font-size: 0.8em;
+}
+.plain-text p > code:last-child::before {
+  content: "跳转至分支：";
+  font-weight: bold;
+  font-style: italic;
+}
+.plain-text p > code:first-child:not(:last-child)::before {
+  content: "分支：";
+  font-weight: bold;
+  font-style: italic;
+  margin-left: -2em;
+}
+.plain-text p > code:first-child::after {
+  display: block;
+  content: "";
 }
 </style>
