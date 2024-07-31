@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import MiniSearch, { type SearchResult } from 'minisearch';
 import {
-  NEllipsis, NIcon,
-  NInput, NMenu, NModal,
+  NButton, NEllipsis, NFlex, NIcon,
+  NInput, NMenu, NModal, NPopover, NSpin,
   type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
+import { bigram } from 'n-gram';
 import { SearchFilled } from '@vicons/material';
 import {
   computed, h, ref, onMounted, nextTick, watch,
@@ -175,6 +177,7 @@ function setTitle(key: string) {
 }
 const chapterEp = ref('');
 const chartSelected = ref('');
+const showSearch = ref(false);
 function selectItem(v: string) {
   if (v.startsWith('map|')) {
     const chapter = v.split('|')[1];
@@ -182,6 +185,7 @@ function selectItem(v: string) {
     chapterEp.value = chapter;
     return;
   }
+  showSearch.value = false;
   showMap.value = false;
   setTitle(v);
   emit('update:value', v);
@@ -189,14 +193,71 @@ function selectItem(v: string) {
 watch(chartSelected, (v) => {
   selectItem(v);
 });
+
+const searcher = ref<MiniSearch>();
+const searchImported = ref(false);
+const searchResults = ref<SearchResult[]>([]);
+const reverseTitleIndex = ref<Record<string, string>>({});
+async function search() {
+  showSearch.value = true;
+  if (!searchImported.value) {
+    reverseTitleIndex.value = Object.fromEntries(
+      Object.values(chapterPresets)
+        .flat()
+        .flatMap((chapter) => chapter.stories.flatMap((story) => story.files.map((f, i) => {
+          if (typeof f === 'string') {
+            return [f, `${chapter.name} - ${story.name} - ${i}`];
+          }
+          return [f[0], `${chapter.name} - ${story.name} - ${f[1]}`];
+        }))),
+    );
+    const keys = (await (await fetch('/search/index.json')).json()) as string[];
+    const text = (await Promise.all(keys.map(async (key) => {
+      const path = `/search/${key}`;
+      return (await fetch(path)).text();
+    }))).join('');
+    searcher.value = MiniSearch.loadJSON(text, {
+      fields: ['text'],
+      storeFields: ['id'],
+      tokenize: bigram,
+    });
+    searchImported.value = true;
+  }
+  const results = searcher.value!.search(filter.value);
+  searchResults.value = results;
+}
+function joinBigramTerms(terms: string[]): string {
+  return terms.reduce((joined, append) => {
+    const intersection = append.substring(0, 1);
+    if (joined.endsWith(intersection)) {
+      return `${joined}${append.substring(1)}`;
+    }
+    return `${joined}, ${append}`;
+  });
+}
 </script>
 
 <template>
-  <n-input v-model:value="filter" placeholder="搜索" clearable :disabled="preventAutofocus">
-    <template #prefix>
-      <n-icon :component="SearchFilled" />
-    </template>
-  </n-input>
+  <n-flex>
+    <n-input
+      v-model:value="filter"
+      placeholder="搜索"
+      clearable
+      autosize
+      :disabled="preventAutofocus"
+      style="flex: 1"
+    >
+      <template #prefix>
+        <n-icon :component="SearchFilled" />
+      </template>
+    </n-input>
+    <n-popover trigger="hover">
+      <template #trigger>
+        <n-button @click="search()">全文搜索</n-button>
+      </template>
+      <span>初始化会很~~卡~~</span>
+    </n-popover>
+  </n-flex>
   <n-modal v-model:show="showMap" preset="card" size="huge">
     <template #header>
       <span>剧情前后连接</span>
@@ -215,4 +276,24 @@ watch(chartSelected, (v) => {
     :render-label="(v) => renderLabel(v as MenuOption & TreeSelectOption)"
   >
   </n-menu>
+  <n-modal v-model:show="showSearch" preset="card" size="huge">
+    <n-spin v-if="!searchImported" />
+    <ul class="search-results">
+      <li v-for="result in searchResults" :key="result.id" @click="selectItem(result.id)">
+        <span>{{ reverseTitleIndex[result.id] ?? result.id }}</span>
+        : {{ joinBigramTerms(result.terms) }}
+      </li>
+    </ul>
+  </n-modal>
 </template>
+<style scoped>
+.search-results li {
+  cursor: pointer;
+}
+.search-results li:hover {
+  background-color: #222;
+}
+.search-results li span.title {
+  font-size: 1.4em;
+}
+</style>
