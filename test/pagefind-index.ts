@@ -1,8 +1,7 @@
 import fs from 'fs/promises';
 import pathlib from 'path';
 
-import { bigram } from 'n-gram';
-import MiniSearch from 'minisearch';
+import * as pagefind from 'pagefind';
 
 import chapters from '../src/assets/chapters.json';
 import type { GfChaptersInfo } from '../src/types/assets';
@@ -41,13 +40,7 @@ async function allTxtFiles(path: string): Promise<string[]> {
   ).flat();
 }
 
-const files = (await allTxtFiles(directory)).map((f) => pathlib.relative(directory, f));
-
-const index = new MiniSearch({
-  fields: ['text'],
-  storeFields: ['id'],
-  tokenize: bigram,
-});
+const index = (await pagefind.createIndex({})).index!;
 
 const results = await Promise.all(Object.values(typedChapters).map(
   async (category) => Promise.all(category.map(async (chapter) => {
@@ -59,7 +52,9 @@ const results = await Promise.all(Object.values(typedChapters).map(
         let text = await fs.readFile(`${directory}/${path}`, 'utf-8');
         const start = text.indexOf('```', text.indexOf('```lua') + 6) + 3;
         text = text.slice(start);
-        text = text.replace(/^.+?(?:<p>|$)/mg, '').replace(/<\/p>$/mg, '');
+        const narrators = new Set([...text.matchAll(/:narrator\[([^\]]+)]/g)].map((m) => m[1]));
+        text = text.replace(/^.+?(?:<p>|$)/mg, '').replace(/<[^>]+?>/mg, '');
+        text = `${[...narrators].join(' ')} ${text}`;
         if (typeof file !== 'string') {
           text = `${file[1]} ${text}`;
         }
@@ -71,16 +66,19 @@ const results = await Promise.all(Object.values(typedChapters).map(
           text = `${chapter.name} ${chapter.description} ${text}`;
           firstStory = false;
         }
-        index.add({
-          id: path,
-          text,
+        await index.addCustomRecord({
+          url: path,
+          content: text,
+          language: 'zh',
         });
         return path;
       }));
     }));
   })),
 ));
+
 const processed = new Set(results.flat().flat().flat());
+const files = (await allTxtFiles(directory)).map((f) => pathlib.relative(directory, f));
 const unprocessed = files.filter((f) => !processed.has(f));
 if (unprocessed.length !== 0) {
   // eslint-disable-next-line no-console
@@ -88,21 +86,7 @@ if (unprocessed.length !== 0) {
 }
 
 await fs.mkdir(output, { recursive: true });
-const serialization = JSON.stringify(index);
-
-function split(s: string, maxLength: number): string[] {
-  const result: string[] = [];
-  let start = 0;
-  while (start < s.length) {
-    result.push(s.slice(start, start + maxLength));
-    start += maxLength;
-  }
-  return result;
-}
-
-const chunks = split(serialization, 4 * 1024 * 1024);
-await Promise.all(chunks.map(
-  async (chunk, i) => fs.writeFile(`${output}/index.json.${i}`, chunk),
-));
-
-fs.writeFile(`${output}/index.json`, JSON.stringify(chunks.map((_, i) => `./index.json.${i}`)));
+await index.writeFiles({
+  outputPath: output,
+});
+await pagefind.close();

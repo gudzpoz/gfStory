@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import MiniSearch, { type SearchResult } from 'minisearch';
+import initJieba, { cut as cutJieba } from 'jieba-wasm';
 import {
   NButton, NEllipsis, NFlex, NIcon,
   NInput, NMenu, NModal, NPopover, NSpin,
   type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
-import { bigram } from 'n-gram';
 import { SearchFilled } from '@vicons/material';
 import {
   computed, h, ref, onMounted, nextTick, watch,
 } from 'vue';
+
+// eslint-disable-next-line import/no-unresolved
+import jiebaUrl from '@/../node_modules/jieba-wasm/pkg/web/jieba_rs_wasm_bg.wasm?url';
 
 import {
   type Chapter, type ChapterType, type GfChaptersInfo,
@@ -194,49 +196,66 @@ watch(chartSelected, (v) => {
   selectItem(v);
 });
 
-const searcher = ref<MiniSearch>();
-const searchImported = ref('下载索引文件中……');
-const searchResults = ref<SearchResult[]>([]);
+interface PageFindResult {
+  url: string;
+  raw_url: string;
+  content: string;
+  excerpt: string;
+  locations: number[];
+}
+interface PageFind {
+  init: () => Promise<void>;
+  options: (options: {
+    ranking: {
+      pageLength?: number;
+      termFrequency?: number;
+      termSimilarity?: number;
+      termSaturation?: number;
+    },
+  }) => Promise<void>;
+  search: (text: string) => Promise<{
+    results: {
+      id: string,
+      data: () => Promise<PageFindResult>,
+      score: number,
+      words: number[],
+    }[],
+  }>;
+}
+const pagefind = ref<PageFind>();
+const searchResults = ref<PageFindResult[]>([]);
 const reverseTitleIndex = ref<Record<string, string>>({});
 async function search() {
   showSearch.value = true;
-  if (searchImported.value !== '') {
-    const keys = (await (await fetch('/search/index.json')).json()) as string[];
-    const text = (await Promise.all(keys.map(async (key) => {
-      const path = `/search/${key}`;
-      const t = (await fetch(path)).text();
-      searchImported.value += '.';
-      return t;
-    }))).join('');
-    searchImported.value = '正在将索引文件加载入内存……（可能需要半分钟）';
-    searcher.value = await MiniSearch.loadJSONAsync(text, {
-      fields: ['text'],
-      storeFields: ['id'],
-      tokenize: bigram,
+  if (!pagefind.value) {
+    const base = window.location.href;
+    await initJieba(jiebaUrl);
+    const pf: PageFind = await import(/* @vite-ignore */ new URL('/search/pagefind.js', base).href);
+    await pf.options({
+      ranking: {
+        pageLength: 0,
+        termFrequency: 0,
+      },
     });
-    searchImported.value = '正在关联章节名称……';
+    await pf.init();
+    pagefind.value = pf;
     reverseTitleIndex.value = Object.fromEntries(
       Object.values(chapterPresets)
         .flat()
-        .flatMap((chapter) => chapter.stories.flatMap((story) => story.files.map((f, i) => {
+        .flatMap((chapter) => chapter.stories.flatMap((story) => story.files.map((f) => {
           if (typeof f === 'string') {
-            return [f, `${chapter.name} - ${story.name} - ${i}`];
+            return [f, `${chapter.name} - ${story.name}`];
           }
           return [f[0], `${chapter.name} - ${story.name} - ${f[1]}`];
         }))),
     );
-    searchImported.value = '';
   }
-  const results = searcher.value!.search(filter.value);
-  searchResults.value = results;
-}
-function joinBigramTerms(terms: string[]): string {
-  return terms.reduce((joined, append) => {
-    const intersection = append.substring(0, 1);
-    if (joined.endsWith(intersection)) {
-      return `${joined}${append.substring(1)}`;
-    }
-    return `${joined}, ${append}`;
+  const index = await pagefind.value!.search(cutJieba(filter.value, false).join(' '));
+  const results = await Promise.all(index.results.map((result) => result.data()));
+  searchResults.value = results.sort((a, b) => {
+    const aRank = a.content.includes(filter.value) ? 1 : 0;
+    const bRank = b.content.includes(filter.value) ? 1 : 0;
+    return bRank - aRank;
   });
 }
 </script>
@@ -280,13 +299,15 @@ function joinBigramTerms(terms: string[]): string {
     :render-label="(v) => renderLabel(v as MenuOption & TreeSelectOption)"
   >
   </n-menu>
-  <n-modal v-model:show="showSearch" preset="card" size="huge">
-    <n-spin v-if="searchImported !== ''" />
-    <span v-if="searchImported !== ''">{{ searchImported }}</span>
+  <n-modal
+    v-model:show="showSearch" preset="card" size="huge"
+    style="max-width: 90vw; max-height: 90vh; overflow-y: auto;"
+  >
+    <n-spin v-if="!pagefind" />
     <ul class="search-results">
-      <li v-for="result in searchResults" :key="result.id" @click="selectItem(result.id)">
-        <span>{{ reverseTitleIndex[result.id] ?? result.id }}</span>
-        : {{ joinBigramTerms(result.terms) }}
+      <li v-for="result in searchResults" :key="result.raw_url" @click="selectItem(result.raw_url)">
+        <span class="title">{{ reverseTitleIndex[result.raw_url] ?? result.raw_url }}</span>
+        <p class="excerpt" v-html="result.excerpt" />
       </li>
     </ul>
   </n-modal>
@@ -300,5 +321,11 @@ function joinBigramTerms(terms: string[]): string {
 }
 .search-results li span.title {
   font-size: 1.4em;
+}
+.search-results li p.excerpt {
+  font-size: 0.9em;
+}
+.search-results li p.excerpt mark {
+  text-decoration: underline;
 }
 </style>
