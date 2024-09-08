@@ -193,8 +193,6 @@ _extra_chapters: list[tuple[str, str, str, list]] = [
     ('-61', 'C.E. 2023 思域迷航', '2023', []),
     ('-62', 'C.E. 2023 许可！二次加载', '2023', []),
 
-    ('-70', '零电荷', '', []),
-
     ('-8', '猎兔行动', '《苍翼默示录》x《罪恶装备》联动内容', []),
     ('-14,-15', '独法师', '《崩坏学园2》联动内容', []),
     ('-19,-20,-22', '荣耀日', '《DJMAX RESPECT》联动内容', []),
@@ -339,22 +337,6 @@ _attached_events: list[tuple[str, Story]] = [
         name='演习训练-愚人节版',
         description='欢迎回来，父亲大人。',
         files=['always-404-1-1-1.txt', 'battleavg/always-404-1-1-2.txt', 'always-404-1-1-3.txt'],
-    )),
-    # 里坎禁猎区
-    ('-52-0-1.txt', Story(
-        name='抉择之箱',
-        description='',
-        files=['-52-7-1.txt'],
-    )),
-    ('-52-6-1.txt', Story(
-        name='夏日终章（WA2000）',
-        description='',
-        files=['-52-e-1.txt'],
-    )),
-    ('-52-e-1.txt', Story(
-        name='夏日终章（春田）',
-        description='',
-        files=['-52-e-1-springfield.txt'],
     )),
     # 雪浪映花颜
     ('-57-0-1.txt', Story(
@@ -593,7 +575,9 @@ def post_insert(chapters: dict[int, Chapter], mapped_files: set[str]):
         )
         mapped_files.add(attached)
     for file, attached in _attached_events:
-        assert all(f not in mapped_files and f[0] not in mapped_files for f in attached.files)
+        assert all(
+            f not in mapped_files and f[0] not in mapped_files for f in attached.files
+        ), [f for f in attached.files if f in mapped_files or f[0] in mapped_files]
         c, story = stories[file]
         c.stories.insert(c.stories.index(story) + 1, attached)
         for f in attached.files:
@@ -770,10 +754,10 @@ def get_block_list():
 
 def get_extra_stories(destination: pathlib.Path):
     downloadables = [
-        (
-            'https://gcore.jsdelivr.net/gh/gf-data-tools/gf-data-ch@42b067b833a5e10a8f9cedf198fe182f1df122f1/asset/avgtxt/-52-e-1.txt',
-            '-52-e-1-springfield.txt',
-        ),
+        # (
+        #     'https://gcore.jsdelivr.net/gh/gf-data-tools/gf-data-ch@42b067b833a5e10a8f9cedf198fe182f1df122f1/asset/avgtxt/-52-e-1.txt',
+        #     '-52-e-1-springfield.txt',
+        # ),
     ]
     for url, file in downloadables:
         path = destination.joinpath(file)
