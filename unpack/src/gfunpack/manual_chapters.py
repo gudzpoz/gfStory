@@ -798,19 +798,6 @@ def get_extra_anniversary_stories(destination: pathlib.Path):
 
 
 def fill_in_chapter_info(main: list[Chapter], events: list[Chapter]):
-    for c in events:
-        if '沙罗蚀相' in c.name:
-            break
-    else:
-        raise ValueError('Could not find chapter 沙罗蚀相')
-    events.remove(c)
-    for j, d in enumerate(main):
-        if '纵向应变' in d.name:
-            break
-    else:
-        raise ValueError('Could not find chapter 纵向应变')
-    main.insert(j + 1, c)
-
     assert main[1].description == '0'
     chpt_zero = main[1]
     main.remove(chpt_zero)
