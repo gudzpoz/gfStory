@@ -95,6 +95,7 @@ const rawData: (MenuOption & TreeSelectOption)[] = [
   generateChapterOption('anniversary6', '六周年周年庆'),
   generateChapterOption('anniversary5', '五周年周年庆'),
   generateChapterOption('anniversary4', '四周年周年庆'),
+  generateChapterOption('help', '求救回信'),
   generateChapterOption('skin', '皮肤故事'),
 ];
 function filterOptions(

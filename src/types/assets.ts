@@ -45,6 +45,7 @@ export function getUrlType(s: string): typeof MEDIA_TYPES[number] {
 export type ChapterType = (
   'main' | 'event' | 'colab' | 'bonding' | 'upgrading'
   | 'anniversary' | 'anniversary6' | 'anniversary5' | 'anniversary4' | 'skin'
+  | 'help'
 );
 export type Story = {
   name: string;

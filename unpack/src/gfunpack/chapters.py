@@ -166,7 +166,7 @@ class Chapters:
         all_files = [f'{s.strip().lower()}.txt' for s in scripts if s.strip() != '']
         filtered = [f for f in all_files if f not in mapped_files]
         if len(filtered) != 0 and len(filtered) != len(all_files):
-            _warning('potential duplicate story entries: %s (%s)', story.title, filtered)
+            _warning('potential duplicate story entries: %s (%s != %s)', story.title, filtered, all_files)
         mapped_files.update(all_files)
         return filtered
 
@@ -190,6 +190,8 @@ class Chapters:
                 continue
             _, filename = path.split('/')
             name = filename.split('.')[0]
+            if name.startswith('default_'):
+                name = name[len('default_'):]
             if name.isdigit() and int(name) in self.guns:
                 i = int(name)
                 name = self.guns[i]['name']
@@ -342,6 +344,19 @@ class Chapters:
             ))
         return [v for _, v in sorted(chapters.items(), key=lambda e: e[0])]
 
+    def _categorize_help_letters(self):
+        chapters = self._categorize_anniversary('letters')
+        for chapter in chapters:
+            for story in chapter.stories:
+                files = story.files
+                files_with_info = []
+                for file in files:
+                    if isinstance(file, str) and 'default_' in file:
+                        file = (file, '默认')
+                    files_with_info.append(file)
+                story.files = files_with_info
+        return chapters
+
     def categorize_stories(self):
         all_chapters: dict[str, list[Chapter]] = {}
         stories = self._categorize_main_stories()
@@ -368,6 +383,7 @@ class Chapters:
         all_chapters['anniversary4'] = self._categorize_anniversary('anniversary4')
         all_chapters['anniversary5'] = self._categorize_anniversary('anniversary5')
         all_chapters['anniversary6'] = self._categorize_anniversary('anniversary6')
+        all_chapters['help'] = self._categorize_help_letters()
         all_chapters['skin'] = self._categorize_skins()
         return all_chapters
 
