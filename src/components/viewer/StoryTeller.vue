@@ -8,7 +8,9 @@ import {
 } from '@vicons/material';
 
 import StoryScene from './StoryScene.vue';
-import { StoryInterpreter, type SpriteImage, type Tags } from '../../story/interpreter';
+import {
+  StoryInterpreter, type HistoryLine, type SpriteImage, type Tags,
+} from '../../story/interpreter';
 
 const props = defineProps<{
   chunk?: string,
@@ -39,13 +41,13 @@ const ended = ref(false);
 const auto = ref(false);
 const autoSpeed = ref(1);
 const options = ref<SelectLine['select']>([]);
-const history: [string, string][] = [];
+const history: HistoryLine[] = [];
 
 function toText(s: string) {
   return s.trim().replace(/\\/g, '');
 }
 
-const showingHistory = ref<[string, string][]>();
+const showingHistory = ref<HistoryLine[]>();
 function showHistory() {
   showingHistory.value = history;
 }
@@ -86,15 +88,16 @@ function playAudio(audio: string) {
   } catch (_) { /* empty */ }
 }
 
-function updateLine(line: string, tags: Record<string, string>) {
+function updateLine(line: string, tags: Tags) {
   narrator.value = toText(tags.narrator ?? '');
-  narratorColor.value = tags.color ?? '';
+  const color = (tags.color ?? '').replace('\\', '');
+  narratorColor.value = color;
   if (tags.sprites !== undefined) {
     sprites.value = tags.sprites.split('|').map(toText)
       .map((s) => {
         const [name, n, effects] = s.split('/');
         const image = s === '' ? null : story.getImage(`${name}/${n}`);
-        if (effects === '') {
+        if (!effects || effects === '') {
           return image;
         }
         return {
@@ -108,7 +111,11 @@ function updateLine(line: string, tags: Record<string, string>) {
     remote.value = new Set(tags.remote.split('|').map(toText));
   }
   text.value = line;
-  history.push([narrator.value, line]);
+  history.push({
+    narrator: narrator.value,
+    narratorColor: color,
+    line,
+  });
 }
 
 function nextLine(option?: number) {

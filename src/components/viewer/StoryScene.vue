@@ -6,7 +6,7 @@ import {
 
 import AnimatedText from './AnimatedText.vue';
 import SpriteImageView from '../media/SpriteImage.vue';
-import type { SpriteImage } from '../../story/interpreter';
+import type { HistoryLine, SpriteImage } from '../../story/interpreter';
 
 // eslint-disable-next-line import/no-unresolved
 import circleSvg from '../../assets/circle.svg?raw';
@@ -35,7 +35,7 @@ const props = defineProps<{
 
   loading?: boolean,
 
-  history?: [string, string][];
+  history?: HistoryLine[];
 }>();
 const textBox = ref<HTMLDivElement>();
 const textAnimating = ref(false);
@@ -124,7 +124,7 @@ watch(() => props.history, (history) => {
       @click="emitClick"
       @mousedown="setDownPosition"
     >
-      <transition-group name="sprite" tag="div" class="sprites">
+      <transition-group name="sprite" tag="div" class="sprites" v-if="backgroundSpace">
         <sprite-image-view
           v-for="sprite, i in sprites"
           :sprite="sprite"
@@ -153,8 +153,8 @@ watch(() => props.history, (history) => {
           <div v-if="history">
             <table class="history-lines">
               <tr v-for="line, i in history!" :key="i">
-                <td v-html="line[0]"></td>
-                <td v-html="line[1]"></td>
+                <td :style="{ color: line.narratorColor }" v-html="line.narrator"></td>
+                <td v-html="line.line"></td>
               </tr>
             </table>
           </div>

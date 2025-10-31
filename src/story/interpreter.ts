@@ -24,6 +24,12 @@ export interface SpriteImage extends CharacterSprite {
   effects?: string[];
 }
 
+export type HistoryLine = {
+  narrator: string,
+  narratorColor?: string,
+  line: string,
+};
+
 function fetchSpriteImage(character: string, s: CharacterSprite) {
   const image = new Image();
   return new Promise<[string, SpriteImage]>((resolve) => {
