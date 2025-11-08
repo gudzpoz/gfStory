@@ -12,7 +12,8 @@
 
 ## 开发说明
 
-我觉得不会有人 fork 也不会有 PR，总之这是给我自己的笔记。
+我现在希望有人 fork 也希望有人有 PR！（因为我是半退坑状态所以没什么动力更新。）
+总之这是给维护者的笔记。
 
 这个项目大概分为两部分，一部分是各种网页界面，另一部分是自动解包。
 开发的时候需要把各种资源解包了网页界面才能运行得了。
@@ -23,7 +24,7 @@
 来下载资源。
 具体命令可以看 [`build.yml`](./.github/workflows/build.yml) 里面的。基本步骤是：
 
-- 用 `pdm` 和 `pip` 把脚本和 `gf-resource-downloader` 的 Python 依赖弄好，
+- 用 `uv` 和 `pip` 把脚本和 `gf-resource-downloader` 的 Python 依赖弄好，
   另外把 `ffmpeg`（用于音频编码）, `pngquant`（压缩图像）, `vgmstream-cli`（解包音频）这几个程序安装好。
 
 - 运行 `gf-resource-downloader` 下载资源（大更新的话说不定要把 `output` 给先清空一下）。
