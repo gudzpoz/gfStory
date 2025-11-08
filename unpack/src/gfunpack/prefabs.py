@@ -37,41 +37,41 @@ class Prefabs:
     def __init__(self, directory: str) -> None:
         self.directory = utils.check_directory(directory)
         self.resource_files = list(self.directory.glob('*prefab*.ab'))
-        prefabs = [UnityPy.load(str(path)) for path in self.resource_files]
+        prefabs = [str(path) for path in self.resource_files]
         self.details = self.load_prefabs(prefabs)
 
-    def _collect_dialogue_pic_holders(self, prefabs: list[Environment]):
-        objects: dict[int, MonoBehaviour] = {}
+    def _collect_dialogue_pic_holders(self, prefabs: list[str]):
+        ids: dict[int, bool] = {}
         for prefab in prefabs:
-            for obj in prefab.objects:
+            for obj in UnityPy.load(prefab).objects:
                 if obj.type.name != 'MonoBehaviour':
                     continue
                 data = typing.cast(MonoBehaviour, obj.read())
                 try:
                     script: MonoScript = data.m_Script.read()
                     if script.name == 'DialoguePicHolder':
-                        assert obj.path_id not in objects
+                        assert obj.path_id not in ids
                         assert data.m_GameObject.file_id == 0
-                        objects[obj.path_id] = data
+                        ids[obj.path_id] = True
+                        yield data
                 except AssertionError as e:
-                    _warning('something went wrong (%s): %s: %s', prefab.path, obj.path_id, e)
+                    _warning('something went wrong (%s): %s: %s', prefab, obj.path_id, e)
                 except AttributeError:
                     pass
-        return objects
 
     @classmethod
     def _match_container_path(cls, path: str) -> str | None:
         match = _path_regex.match(path)
         return None if match is None else match.group(1)
 
-    def _collect_game_objects(self, prefabs: list[Environment]):
-        objects: dict[int, GameObject] = {}
+    def _collect_game_objects(self, prefabs: list[str]):
+        objects: dict[int, str] = {}
         for prefab in prefabs:
-            for path, obj in prefab.container.items():
+            for path, obj in UnityPy.load(prefab).container.items():
                 if obj.type.name == 'GameObject' and self._match_container_path(path) is not None:
                     data = typing.cast(GameObject, obj.read())
                     if data.name is not None and data.name != '':
-                        objects[data.path_id] = data
+                        objects[data.path_id] = data.name
         return objects
 
     @classmethod
@@ -111,14 +111,13 @@ class Prefabs:
             ))
         return details
 
-    def load_prefabs(self, prefabs: list[Environment]):
-        dialogue_pics = self._collect_dialogue_pic_holders(prefabs)
-        objects = self._collect_game_objects(prefabs)
+    def load_prefabs(self, prefabs: list[str]):
+        object_names = self._collect_game_objects(prefabs)
         details: dict[str, list[DialoguePicDetails]] = {}
-        for pic in dialogue_pics.values():
+        for pic in self._collect_dialogue_pic_holders(prefabs):
             parent_id = pic.m_GameObject.path_id
-            if parent_id in objects:
-                name = objects[parent_id].name
+            if parent_id in object_names:
+                name = object_names[parent_id]
             elif pic.container is not None:
                 _warning('%s game object not found', pic.container)
                 name = self._match_container_path(pic.container)

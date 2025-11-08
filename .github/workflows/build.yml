@@ -25,7 +25,7 @@ jobs:
       - uses: mfinelli/setup-imagemagick@v7
       - name: Install Dependencies
         run: |
-          sudo apt install ffmpeg pngquant imagemagick libfuse2
+          sudo apt install ffmpeg pngquant
           wget https://github.com/vgmstream/vgmstream-releases/releases/download/nightly/vgmstream-linux-cli.tar.gz
           tar -zxf vgmstream-linux-cli.tar.gz
           mkdir bin
@@ -131,3 +131,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=gfstory

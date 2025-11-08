@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 import pathlib
@@ -89,19 +90,24 @@ class CharacterCollection:
         except FileNotFoundError as e:
             raise FileNotFoundError('imagemagick is required to merge alpha layers', e)
 
-    def _extract_pics(self, bundle: UnityPy.Environment):
+    def _extract_pics(self, bundle: str):
         """
         Extracts all the sprites and textures from the given bundle.
         """
-        path_id_index: dict[int, Texture2D | Sprite] = {}
-        for obj in bundle.objects:
+        path_id_index: dict[int, typing.Callable[[], Texture2D | Sprite]] = {}
+        for obj in UnityPy.load(bundle).objects:
             if obj.type.name != 'Sprite' and obj.type.name != 'Texture2D':
                 continue
             if obj.path_id == 0 or obj.path_id not in self.required_path_ids:
                 continue
-            typed = typing.cast(Sprite | Texture2D, obj.read())
-            path_id_index[obj.path_id] = typed
+            path_id_index[obj.path_id] = lambda id=obj.path_id: self.read_pic(bundle, id)
         return path_id_index
+
+    @functools.lru_cache(maxsize=8)
+    def read_pic(self, bundle: str, path_id: int):
+        bundle_env = UnityPy.load(bundle)
+        found = [obj for obj in bundle_env.objects if obj.path_id == path_id][0]
+        return typing.cast(Sprite | Texture2D, found.read())
 
     @classmethod
     def _has_alpha_channel(cls, pics: list[pathlib.Path]):
@@ -184,7 +190,11 @@ class CharacterCollection:
                 return typing.cast(Texture2D | Sprite, obj.read())
         raise ValueError(f'no object at path_id {info.path_id}')
 
-    def _try_merging_alpha(self, path_id_index: dict[int, Texture2D | Sprite], sprites: list[int]):
+    def _try_merging_alpha(
+            self,
+            path_id_index: dict[int, typing.Callable[[], Texture2D | Sprite]],
+            sprites: list[int],
+    ):
         for character, details in (bar := tqdm.tqdm(self.image_details.items())):
             bar.set_description(character)
             for i, detail in enumerate(details):
@@ -199,14 +209,14 @@ class CharacterCollection:
                     if alpha_path_id == 0:
                         _warning(f'no image at all: {character}: {detail}')
                         continue
-                    alpha = path_id_index[alpha_path_id]
+                    alpha = path_id_index[alpha_path_id]()
                     if alpha.name.endswith('_Alpha'):
                         name = alpha.name[:-6]
                         info = self.db.find_by_name(name)
                         if info is None:
                             _warning(f'no image for _Alpha: {character}: {name} {detail}')
                             continue
-                        path_id_index[info.path_id] = self.read_single(info)
+                        path_id_index[info.path_id] = lambda info=info: self.read_single(info)
                         path_id = info.path_id
                         detail.path_id = path_id
                     else:
@@ -216,8 +226,8 @@ class CharacterCollection:
                     _warning(f'no alpha channel: {character}: {detail}')
                     alpha_path_id = path_id
                 self._semaphore.acquire()
-                image = path_id_index[path_id]
-                alpha_image = path_id_index[alpha_path_id]
+                image = path_id_index[path_id]()
+                alpha_image = path_id_index[alpha_path_id]()
                 name = image.name
                 assert name is not None and name != ''
                 threading.Thread(
@@ -267,7 +277,7 @@ class CharacterCollection:
         bundles = set(image.bundle for image in images).union(
             set(sprite.bundle for sprite in sprites),
         )
-        path_id_index: dict[int, Texture2D | Sprite] = {}
+        path_id_index: dict[int, typing.Callable[[], Texture2D | Sprite]] = {}
         for bundle_name in (bar := tqdm.tqdm(bundles)):
             path = self.db.get_bundle_path(bundle_name)
             file = str(path)
@@ -278,8 +288,7 @@ class CharacterCollection:
                 match = _character_file_regex.match(file)
                 group = bundle_name if match is None else match.group(1)
             bar.set_description(group)
-            bundle = UnityPy.load(file)
-            extracted = self._extract_pics(bundle)
+            extracted = self._extract_pics(file)
             for path_id, img in extracted.items():
                 if path_id in path_id_index and 'avgpicprefab' in bundle_name:
                     continue
