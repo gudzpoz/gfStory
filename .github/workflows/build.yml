@@ -40,14 +40,14 @@ jobs:
           path: |
             unpack/downloader/output
           key: gf-downloader-resources
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: 3.12
       - name: Setup Python Environment
         run: |
           cd unpack
-          pdm install
-          source .venv/bin/activate
-          pip install -r downloader/requirements.txt
+          uv sync
       - name: Download Resources
         run: |
           cd unpack

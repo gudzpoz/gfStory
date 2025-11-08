@@ -6,21 +6,32 @@ authors = [
     {name = "gudzpoz", email = "gudzpoz@live.com"},
 ]
 dependencies = [
-    "UnityPy>=1.10.3",
-    "tqdm>=4.66.1",
-    "pip>=23.2.1",
+    "UnityPy==1.10.18",
     "hjson>=3.1.0",
+    "tqdm>=4.66.1",
+    # downloader
+    "gf-utils",
+    "logger-tt==1.7.0", # pinning: 1.7.4 seems to have problems
+    # gfl-data-miner-python
+    "GitPython==3.1.41",
+    "pyjson5>=1.6.1",
+    "pycryptodome>=3.19.1",
+    "pandas>=1.5.3",
+    "urllib3>=1.26.19",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "MIT"}
 
-[build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
-
-[tool.pdm.dev-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=7.4.2",
     "notebook>=7.0.4",
 ]
+
+[tool.uv.sources]
+gf-utils = { git = "https://github.com/gf-data-tools/gf-utils.git" }
+
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
