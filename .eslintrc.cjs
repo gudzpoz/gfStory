@@ -21,6 +21,7 @@ module.exports = {
   ],
   ignorePatterns: [
     'vite.config.ts',
+    'vitest.progress.config.ts',
     '.eslintrc.cjs',
   ],
 };

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import initJieba, { cut as cutJieba } from 'jieba-wasm';
 import {
-  NButton, NEllipsis, NFlex, NIcon,
+  NButton, NCheckbox, NEllipsis, NFlex, NIcon,
   NInput, NMenu, NModal, NPopover, NSpin,
   type MenuOption, type TreeSelectOption,
 } from 'naive-ui';
@@ -18,6 +18,8 @@ import {
 } from '../../types/assets';
 import { MAPPED_CHAPTERS } from './edges';
 import StoryChart from './StoryChart.vue';
+import { filterUnread, formatProgress, storyKeys } from './progress';
+import { isStoryId } from '../../db/progress';
 
 import jsonChapterPresets from '../../assets/chapters.json';
 
@@ -26,9 +28,13 @@ const chapterPresets: GfChaptersInfo = jsonChapterPresets;
 const props = defineProps<{
   value: string,
   setTitleWhenSelected?: boolean,
+  read?: Set<string>,
+  unreadOnly?: boolean,
+  progressBusy?: boolean,
 }>();
 const emit = defineEmits<{
   'update:value': [value: string],
+  'set-read': [id: string, checked: boolean],
 }>();
 
 const filter = ref('');
@@ -51,7 +57,8 @@ function generateLeafOption(
 
 function generateStoryOptions(chapter: Chapter) {
   const stories: (MenuOption & TreeSelectOption)[] = chapter.stories.map((story) => {
-    const key = typeof story.files[0] === 'string' ? story.files[0] : story.files[0][0];
+    const first = story.files[0];
+    const key = typeof first === 'string' ? first : first?.[0] ?? `empty:${story.name}`;
     if (story.files.length === 0) {
       return { key, label: story.name, disabled: true };
     }
@@ -114,11 +121,19 @@ function filterOptions(
     return null;
   }).filter((x): x is (MenuOption & TreeSelectOption) => x !== null);
 }
+const allKeys = storyKeys(rawData);
+const completed = computed(() => [...allKeys].filter((id) => props.read?.has(id)).length);
+const originalOptions = new Map<string | number, MenuOption & TreeSelectOption>();
+function indexOptions(options: (MenuOption & TreeSelectOption)[]) {
+  options.forEach((option) => {
+    if (option.key !== undefined) originalOptions.set(option.key, option);
+    if (option.children) indexOptions(option.children);
+  });
+}
+indexOptions(rawData);
 const data = computed(() => {
-  if (filter.value === '') {
-    return rawData;
-  }
-  return filterOptions(rawData);
+  const filtered = filter.value === '' ? rawData : filterOptions(rawData);
+  return props.unreadOnly && props.read ? filterUnread(filtered, props.read) : filtered;
 });
 function getKeys(options: (MenuOption & TreeSelectOption)[]): string[] {
   return options.flatMap((option) => {
@@ -140,13 +155,42 @@ const expandedKeys = computed(() => {
 });
 
 function renderLabel(option: MenuOption & TreeSelectOption) {
-  const label = h('span', { className: 'story-heading' }, { default: () => option.label });
-  if (!option.description || (option.description as string).trim() === '') {
-    return label;
+  const original = originalOptions.get(option.key!) ?? option;
+  const keys = storyKeys([original]);
+  const count = [...keys].filter((id) => props.read?.has(id)).length;
+  const label = h('span', { class: 'story-heading' }, [
+    option.label as string,
+    props.read && original.children && keys.size ? h('span', {
+      class: 'story-progress',
+      'aria-label': '阅读进度',
+      style: { marginLeft: '0.4em', opacity: 0.75, fontSize: '0.85em' },
+    }, ` ${formatProgress(count, keys.size)}`) : null,
+  ]);
+  const heading = !option.description || (option.description as string).trim() === ''
+    ? label
+    : h(NEllipsis, { trigger: 'hover' }, {
+      default: () => [label, option.description as string],
+    });
+  const id = option.key;
+  if (!props.read || original.children || typeof id !== 'string' || !isStoryId(id)) {
+    return heading;
   }
-  return h(NEllipsis, { trigger: 'hover' }, {
-    default: () => [label, option.description as string],
-  });
+  return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '8px' } }, [
+    h('span', {
+      onClick: (event: MouseEvent) => event.stopPropagation(),
+      onKeydown: (event: KeyboardEvent) => {
+        if (event.key === ' ' || event.key === 'Enter') event.stopPropagation();
+      },
+    }, [
+      h(NCheckbox, {
+        checked: props.read.has(id),
+        disabled: props.progressBusy,
+        'aria-label': `标记${option.label as string}为已读`,
+        'onUpdate:checked': (checked: boolean) => emit('set-read', id, checked),
+      }),
+    ]),
+    heading,
+  ]);
 }
 
 function setTitle(key: string) {
@@ -170,7 +214,7 @@ function setTitle(key: string) {
       return null;
     }).filter((x): x is (MenuOption & TreeSelectOption)[] => x !== null)[0];
   }
-  const found = find(data.value);
+  const found = find(rawData);
   if (found) {
     const label = found.slice(1).map((x) => x.label).join(' > ');
     document.title = label;
@@ -281,6 +325,9 @@ async function search() {
       </template>
       <span>初始化会很~~卡~~</span>
     </n-popover>
+  </n-flex>
+  <n-flex v-if="read" align="center" style="margin-top: 12px">
+    <span>已读 {{ formatProgress(completed, allKeys.size) }}</span>
   </n-flex>
   <n-modal v-model:show="showMap" preset="card" size="huge">
     <template #header>

@@ -18,15 +18,21 @@ const props = defineProps<{
   loading?: boolean,
   menuButton?: boolean,
   textButton?: boolean,
+  autoPlay?: boolean,
+  autoSpeed?: number,
 }>();
 
 // eslint-disable-next-line no-spaced-func
 const emit = defineEmits<{
   (event: 'menu'): void,
   (event: 'text'): void,
+  (event: 'ended', automatic: boolean): void,
+  (event: 'update:autoPlay', automatic: boolean): void,
+  (event: 'update:autoSpeed', speed: number): void,
 }>();
 
 const story = new StoryInterpreter();
+let disposed = false;
 let backgroundMusic: HTMLAudioElement | null = null;
 const background = ref('');
 const classes = ref<string[]>([]);
@@ -38,10 +44,20 @@ const sprites = ref<SpriteImage[]>([]);
 const remote = ref<Set<string>>(new Set<string>());
 const text = ref('');
 const ended = ref(false);
-const auto = ref(false);
-const autoSpeed = ref(1);
+const preloading = ref(false);
+const auto = ref(props.autoPlay ?? false);
+const autoSpeed = ref(props.autoSpeed ?? 1);
+watch(auto, (value) => emit('update:autoPlay', value));
+watch(autoSpeed, (value) => emit('update:autoSpeed', value));
+watch(() => props.autoPlay, (value) => {
+  if (value !== undefined) auto.value = value;
+});
+watch(() => props.autoSpeed, (value) => {
+  if (value !== undefined) autoSpeed.value = value;
+});
 const options = ref<SelectLine['select']>([]);
 const history: HistoryLine[] = [];
+let autoHandle: ReturnType<typeof setTimeout> | undefined;
 
 function toText(s: string) {
   return s.trim().replace(/\\/g, '');
@@ -119,10 +135,12 @@ function updateLine(line: string, tags: Tags) {
 }
 
 function nextLine(option?: number) {
+  if (disposed || props.loading || preloading.value) return;
   if (showingHistory.value) {
     showingHistory.value = undefined;
     return;
   }
+  if (ended.value) return;
   if (option === undefined && options.value.length > 0) {
     return;
   }
@@ -132,6 +150,7 @@ function nextLine(option?: number) {
     if ((l as SelectLine).select) {
       const line = l as SelectLine;
       options.value = line.select;
+      auto.value = false;
       return;
     }
     options.value = [];
@@ -158,6 +177,8 @@ function nextLine(option?: number) {
   }
   text.value = '<i>故事结束</i>';
   ended.value = true;
+  clearTimeout(autoHandle);
+  emit('ended', auto.value);
 }
 
 async function getGlobalStory() {
@@ -165,7 +186,6 @@ async function getGlobalStory() {
   return script?.innerHTML ?? await fetch('./sample.lua').then((res) => res.text()) ?? '';
 }
 
-const preloading = ref(false);
 async function updateStory(chunk?: string) {
   const s = chunk ?? await getGlobalStory();
   if (s.trim() === '') {
@@ -186,27 +206,27 @@ async function updateStory(chunk?: string) {
   backgroundMusic = null;
   history.splice(0);
   await story.reload(s);
+  if (disposed) return;
   preloading.value = false;
-  auto.value = false;
-  // autoSpeed.value = 1; // Do not reset autoSpeed
+  auto.value = props.autoPlay ?? false;
   nextLine();
 }
 updateStory(props.chunk);
 watch(() => props.chunk, updateStory);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let autoHandle: any = 0;
 function scheduleAuto() {
-  if (auto.value) {
+  clearTimeout(autoHandle);
+  autoHandle = undefined;
+  if (auto.value && !ended.value && !preloading.value && !props.loading
+    && !disposed && options.value.length === 0) {
     autoHandle = setTimeout(nextLine, (text.value.length / 20) * (5000 / autoSpeed.value));
-  } else if (autoHandle !== 0) {
-    clearTimeout(autoHandle);
-    autoHandle = 0;
   }
 }
 watch(auto, scheduleAuto);
 
 onUnmounted(() => {
+  disposed = true;
+  clearTimeout(autoHandle);
   backgroundMusic?.pause();
   backgroundMusic = null;
 });
@@ -242,9 +262,10 @@ onUnmounted(() => {
     <button v-if="!ended" @click="auto = !auto" :class="{ toggled: auto }">
       <play-arrow-filled></play-arrow-filled><span>自动</span>
     </button>
+    <slot name="navigation"></slot>
     <div class="auto-speed">
       <span v-if="auto">{{ autoSpeed }}</span>
-      <input v-if="auto" type="range" min="1" max="10" v-model="autoSpeed" />
+      <input v-if="auto" type="range" min="1" max="10" v-model.number="autoSpeed" />
     </div>
   </story-scene>
 </template>
